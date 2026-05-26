@@ -446,8 +446,8 @@ print("Stage 2 template generation complete.")
 #
 # This block updates official_source_map.csv so that the database includes
 # playoff fixture sources for:
-# - Segunda Divisió# -----------------------------
-n promotion playoffs
+# - Segunda División promotion playoffs
+
 # - Primera Federación Group 1 promotion playoffs
 # - Primera Federación Group 2 promotion playoffs
 #
