@@ -1086,3 +1086,154 @@ except Exception as e:
 write_csv("fixtures_results_stage_4e.csv", stage_4e_fields, stage_4e_rows)
 
 print(f"Stage 4E generated {len(stage_4e_rows)} app fixture rows.")
+# -----------------------------
+# Stage 4F: Build team fixture index from Stage 4E fixture rows
+# -----------------------------
+
+stage_4f_fields = [
+    "team_fixture_id",
+    "fixture_id",
+    "team_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "matchday",
+    "fixture_date",
+    "opponent_team_id",
+    "home_or_away",
+    "team_score",
+    "opponent_score",
+    "result_for_team",
+    "venue_id",
+    "is_home_ground",
+    "team_autonomous_region_id",
+    "team_autonomous_region_name",
+    "team_autonomous_region_slug",
+    "opponent_autonomous_region_id",
+    "opponent_autonomous_region_name",
+    "opponent_autonomous_region_slug",
+    "source_url",
+]
+
+stage_4f_rows = []
+
+
+def result_for_team(team_score, opponent_score):
+    """Return Win/Loss/Draw from the team's perspective."""
+    try:
+        team_score_int = int(team_score)
+        opponent_score_int = int(opponent_score)
+
+        if team_score_int > opponent_score_int:
+            return "Win"
+        if team_score_int < opponent_score_int:
+            return "Loss"
+        return "Draw"
+
+    except Exception:
+        return ""
+
+
+try:
+    fixtures_file = EXPORT_DIR / "fixtures_results_stage_4e.csv"
+
+    with fixtures_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fixtures = list(reader)
+
+    for fixture in fixtures:
+        fixture_id = fixture["fixture_id"]
+
+        home_team_id = fixture["home_team_id"]
+        away_team_id = fixture["away_team_id"]
+
+        home_score = fixture["home_score"]
+        away_score = fixture["away_score"]
+
+        # Home team perspective
+        stage_4f_rows.append({
+            "team_fixture_id": f"{fixture_id}__{home_team_id}",
+            "fixture_id": fixture_id,
+            "team_id": home_team_id,
+            "season_id": fixture["season_id"],
+            "competition_id": fixture["competition_id"],
+            "competition_name": fixture["competition_name"],
+            "competition_group": fixture["competition_group"],
+            "matchday": fixture["matchday"],
+            "fixture_date": fixture["fixture_date"],
+            "opponent_team_id": away_team_id,
+            "home_or_away": "Home",
+            "team_score": home_score,
+            "opponent_score": away_score,
+            "result_for_team": result_for_team(home_score, away_score),
+            "venue_id": fixture["venue_id"],
+            "is_home_ground": "true",
+            "team_autonomous_region_id": "",
+            "team_autonomous_region_name": "",
+            "team_autonomous_region_slug": "",
+            "opponent_autonomous_region_id": "",
+            "opponent_autonomous_region_name": "",
+            "opponent_autonomous_region_slug": "",
+            "source_url": fixture["source_url"],
+        })
+
+        # Away team perspective
+        stage_4f_rows.append({
+            "team_fixture_id": f"{fixture_id}__{away_team_id}",
+            "fixture_id": fixture_id,
+            "team_id": away_team_id,
+            "season_id": fixture["season_id"],
+            "competition_id": fixture["competition_id"],
+            "competition_name": fixture["competition_name"],
+            "competition_group": fixture["competition_group"],
+            "matchday": fixture["matchday"],
+            "fixture_date": fixture["fixture_date"],
+            "opponent_team_id": home_team_id,
+            "home_or_away": "Away",
+            "team_score": away_score,
+            "opponent_score": home_score,
+            "result_for_team": result_for_team(away_score, home_score),
+            "venue_id": fixture["venue_id"],
+            "is_home_ground": "false",
+            "team_autonomous_region_id": "",
+            "team_autonomous_region_name": "",
+            "team_autonomous_region_slug": "",
+            "opponent_autonomous_region_id": "",
+            "opponent_autonomous_region_name": "",
+            "opponent_autonomous_region_slug": "",
+            "source_url": fixture["source_url"],
+        })
+
+except Exception as e:
+    stage_4f_rows.append({
+        "team_fixture_id": "",
+        "fixture_id": "",
+        "team_id": "",
+        "season_id": "2021-22",
+        "competition_id": "PRIMERA_DIVISION",
+        "competition_name": "Primera División",
+        "competition_group": "",
+        "matchday": "1",
+        "fixture_date": "",
+        "opponent_team_id": "",
+        "home_or_away": "",
+        "team_score": "",
+        "opponent_score": "",
+        "result_for_team": "",
+        "venue_id": "",
+        "is_home_ground": "",
+        "team_autonomous_region_id": "",
+        "team_autonomous_region_name": "",
+        "team_autonomous_region_slug": "",
+        "opponent_autonomous_region_id": "",
+        "opponent_autonomous_region_name": "",
+        "opponent_autonomous_region_slug": "",
+        "source_url": "",
+    })
+
+    print(f"Stage 4F failed: {type(e).__name__}: {e}")
+
+write_csv("team_fixture_index_stage_4f.csv", stage_4f_fields, stage_4f_rows)
+
+print(f"Stage 4F generated {len(stage_4f_rows)} team fixture index rows.")
