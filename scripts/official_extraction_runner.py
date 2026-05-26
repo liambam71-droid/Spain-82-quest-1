@@ -1,4 +1,144 @@
+from pathlib import Path
+import csv
+from datetime import datetime, timezone
+
 # -----------------------------
+# Spain 82 App Database Template Generator
+# Stage 2: Generate empty database CSV templates
+# -----------------------------
+
+EXPORT_DIR = Path("data/exports")
+EXPORT_DIR.mkdir(parents=True, exist_ok=True)
+
+NOW = datetime.now(timezone.utc).isoformat()
+
+
+def write_csv(filename, fieldnames, rows=None):
+    """Create a CSV file with headers and optional rows."""
+    rows = rows or []
+    path = EXPORT_DIR / filename
+
+    with path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"Created {path}")
+
+
+# -----------------------------
+# 1. Seasons
+# -----------------------------
+
+seasons_fields = [
+    "season_id",
+    "season_label",
+    "start_year",
+    "end_year",
+    "is_active_for_extraction",
+    "notes",
+]
+
+seasons_rows = [
+    {"season_id": "2021-22", "season_label": "2021/22", "start_year": "2021", "end_year": "2022", "is_active_for_extraction": "true", "notes": ""},
+    {"season_id": "2022-23", "season_label": "2022/23", "start_year": "2022", "end_year": "2023", "is_active_for_extraction": "true", "notes": ""},
+    {"season_id": "2023-24", "season_label": "2023/24", "start_year": "2023", "end_year": "2024", "is_active_for_extraction": "true", "notes": ""},
+    {"season_id": "2024-25", "season_label": "2024/25", "start_year": "2024", "end_year": "2025", "is_active_for_extraction": "true", "notes": ""},
+    {"season_id": "2025-26", "season_label": "2025/26", "start_year": "2025", "end_year": "2026", "is_active_for_extraction": "true", "notes": ""},
+]
+
+
+# -----------------------------
+# 2. Competitions
+# -----------------------------
+
+competitions_fields = [
+    "competition_id",
+    "competition_name",
+    "competition_level",
+    "competition_group",
+    "source_system",
+    "expected_matchdays",
+    "expected_matches_per_season",
+    "notes",
+]
+
+competitions_rows = [
+    {"competition_id": "PRIMERA_DIVISION", "competition_name": "Primera División", "competition_level": "1", "competition_group": "", "source_system": "LaLiga", "expected_matchdays": "38", "expected_matches_per_season": "380", "notes": "Also known as LaLiga EA Sports in recent sponsorship cycle."},
+    {"competition_id": "SEGUNDA_DIVISION", "competition_name": "Segunda División", "competition_level": "2", "competition_group": "", "source_system": "LaLiga", "expected_matchdays": "42", "expected_matches_per_season": "462", "notes": "Also known as LaLiga Hypermotion in recent sponsorship cycle."},
+    {"competition_id": "PRIMERA_FEDERACION_G1", "competition_name": "Primera Federación", "competition_level": "3", "competition_group": "Group 1", "source_system": "RFEF", "expected_matchdays": "38", "expected_matches_per_season": "380", "notes": ""},
+    {"competition_id": "PRIMERA_FEDERACION_G2", "competition_name": "Primera Federación", "competition_level": "3", "competition_group": "Group 2", "source_system": "RFEF", "expected_matchdays": "38", "expected_matches_per_season": "380", "notes": ""},
+]
+
+
+# -----------------------------
+# 3. Teams
+# -----------------------------
+
+teams_fields = [
+    "team_id",
+    "club_name_official",
+    "club_name_short",
+    "club_name_display",
+    "slug",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_level",
+    "competition_group",
+    "home_ground_id",
+    "home_ground_name",
+    "city",
+    "province",
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+    "regional_challenge_eligible",
+    "regional_challenge_group_name",
+    "official_club_url",
+    "source_url",
+    "active_in_current_82_app",
+    "historical_team",
+    "notes",
+]
+
+
+# -----------------------------
+# 4. Grounds
+# -----------------------------
+
+grounds_fields = [
+    "ground_id",
+    "ground_name",
+    "city",
+    "province",
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+    "capacity",
+    "latitude",
+    "longitude",
+    "opened_year",
+    "primary_tenant_team_id",
+    "official_source_url",
+    "notes",
+]
+
+
+# -----------------------------
+# 5. Team aliases
+# -----------------------------
+
+team_aliases_fields = [
+    "alias_id",
+    "team_id",
+    "source_name",
+    "normalised_name",
+    "source_system",
+    "valid_from_season",
+    "valid_to_season",
+    "notes",
+]# -----------------------------
 # 6. Fixtures/results
 # -----------------------------
 
