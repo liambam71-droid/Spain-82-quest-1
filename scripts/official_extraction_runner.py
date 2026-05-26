@@ -943,3 +943,146 @@ except Exception as e:
 write_csv("stage_4d_laliga_jornada_1_fixtures.csv", stage_4d_fields, stage_4d_rows)
 
 print(f"Stage 4D extracted {len(stage_4d_rows)} fixture rows.")
+# -----------------------------
+# Stage 4E: Convert raw LaLiga Jornada 1 rows into app fixture rows
+# -----------------------------
+
+def make_team_id(team_name):
+    """Create a simple stable-looking team_id from a source team name."""
+    cleaned = team_name.upper()
+    cleaned = cleaned.replace("Á", "A").replace("É", "E").replace("Í", "I")
+    cleaned = cleaned.replace("Ó", "O").replace("Ú", "U").replace("Ü", "U")
+    cleaned = cleaned.replace("Ñ", "N")
+    cleaned = re.sub(r"[^A-Z0-9]+", "_", cleaned)
+    cleaned = cleaned.strip("_")
+    return cleaned
+
+
+def make_fixture_id(season_id, competition_id, matchday, home_team_id, away_team_id):
+    return f"{season_id}_{competition_id}_J{int(matchday):02d}_{home_team_id}_{away_team_id}"
+
+
+stage_4e_fields = [
+    "fixture_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_level",
+    "competition_group",
+    "matchday",
+    "round_label",
+    "fixture_date",
+    "kickoff_time_local",
+    "home_team_id",
+    "home_team_name_source",
+    "away_team_id",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "result_status",
+    "venue_id",
+    "venue_name_source",
+    "attendance",
+    "referee",
+    "match_report_url",
+    "rfef_acta_url",
+    "laliga_match_url",
+    "source_system",
+    "source_url",
+    "source_retrieved_at",
+    "data_confidence",
+    "notes",
+]
+
+stage_4e_rows = []
+
+try:
+    raw_file = EXPORT_DIR / "stage_4d_laliga_jornada_1_fixtures.csv"
+
+    with raw_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        raw_rows = list(reader)
+
+    for row in raw_rows:
+        home_name = row["home_team_name_source"]
+        away_name = row["away_team_name_source"]
+
+        home_team_id = make_team_id(home_name)
+        away_team_id = make_team_id(away_name)
+
+        fixture_id = make_fixture_id(
+            row["season_id"],
+            row["competition_id"],
+            row["matchday"],
+            home_team_id,
+            away_team_id,
+        )
+
+        stage_4e_rows.append({
+            "fixture_id": fixture_id,
+            "season_id": row["season_id"],
+            "competition_id": row["competition_id"],
+            "competition_name": row["competition_name"],
+            "competition_level": "1",
+            "competition_group": "",
+            "matchday": row["matchday"],
+            "round_label": f"Jornada {row['matchday']}",
+            "fixture_date": row["fixture_date"],
+            "kickoff_time_local": "",
+            "home_team_id": home_team_id,
+            "home_team_name_source": home_name,
+            "away_team_id": away_team_id,
+            "away_team_name_source": away_name,
+            "home_score": row["home_score"],
+            "away_score": row["away_score"],
+            "result_status": "played",
+            "venue_id": "",
+            "venue_name_source": "",
+            "attendance": "",
+            "referee": "",
+            "match_report_url": "",
+            "rfef_acta_url": "",
+            "laliga_match_url": "",
+            "source_system": "LaLiga",
+            "source_url": row["source_url"],
+            "source_retrieved_at": NOW,
+            "data_confidence": "high",
+            "notes": "Generated from Stage 4D raw LaLiga Jornada 1 extraction.",
+        })
+
+except Exception as e:
+    stage_4e_rows.append({
+        "fixture_id": "",
+        "season_id": "2021-22",
+        "competition_id": "PRIMERA_DIVISION",
+        "competition_name": "Primera División",
+        "competition_level": "1",
+        "competition_group": "",
+        "matchday": "1",
+        "round_label": "Jornada 1",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "home_team_id": "",
+        "home_team_name_source": "",
+        "away_team_id": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "result_status": "",
+        "venue_id": "",
+        "venue_name_source": "",
+        "attendance": "",
+        "referee": "",
+        "match_report_url": "",
+        "rfef_acta_url": "",
+        "laliga_match_url": "",
+        "source_system": "LaLiga",
+        "source_url": "https://www.laliga.com/laliga-easports/resultados/2021-22/jornada-1",
+        "source_retrieved_at": NOW,
+        "data_confidence": "failed",
+        "notes": f"Error: {type(e).__name__}: {e}",
+    })
+
+write_csv("fixtures_results_stage_4e.csv", stage_4e_fields, stage_4e_rows)
+
+print(f"Stage 4E generated {len(stage_4e_rows)} app fixture rows.")
