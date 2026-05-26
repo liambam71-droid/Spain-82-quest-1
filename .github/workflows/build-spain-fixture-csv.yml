@@ -1,0 +1,35 @@
+name: Build Spain Fixture CSV
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-csv:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create export folders
+        run: |
+          mkdir -p data/exports
+
+      - name: Run extraction script
+        run: |
+          python scripts/official_extraction_runner.py
+
+      - name: Upload CSV exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: spain-fixture-csv-exports
+          path: |
+            data/exports/
+            *.csv
+            *.sqlite
+            validation_report.md
