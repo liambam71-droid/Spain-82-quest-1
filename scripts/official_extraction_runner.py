@@ -2378,3 +2378,189 @@ write_csv(
 )
 
 print(f"Stage 6A extracted {len(stage_6a_raw_rows)} raw fixture rows.")
+# -----------------------------
+# Stage 6B: Convert full Primera División 2021/22 raw rows into app fixture rows
+# -----------------------------
+
+stage_6b_fields = [
+    "fixture_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_level",
+    "competition_group",
+    "matchday",
+    "round_label",
+    "fixture_date",
+    "kickoff_time_local",
+    "home_team_id",
+    "home_team_name_source",
+    "away_team_id",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "result_status",
+    "venue_id",
+    "venue_name_source",
+    "attendance",
+    "referee",
+    "match_report_url",
+    "rfef_acta_url",
+    "laliga_match_url",
+    "source_system",
+    "source_url",
+    "source_retrieved_at",
+    "data_confidence",
+    "notes",
+]
+
+stage_6b_rows = []
+
+try:
+    raw_file = EXPORT_DIR / "stage_6a_primera_2021_22_j1_to_j38_raw.csv"
+
+    with raw_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        raw_rows = list(reader)
+
+    for row in raw_rows:
+        if row.get("data_confidence") == "failed":
+            continue
+
+        home_name = row["home_team_name_source"]
+        away_name = row["away_team_name_source"]
+
+        home_team_id = make_team_id(home_name)
+        away_team_id = make_team_id(away_name)
+
+        fixture_id = make_fixture_id(
+            row["season_id"],
+            row["competition_id"],
+            row["matchday"],
+            home_team_id,
+            away_team_id,
+        )
+
+        stage_6b_rows.append({
+            "fixture_id": fixture_id,
+            "season_id": row["season_id"],
+            "competition_id": row["competition_id"],
+            "competition_name": row["competition_name"],
+            "competition_level": "1",
+            "competition_group": "",
+            "matchday": row["matchday"],
+            "round_label": f"Jornada {row['matchday']}",
+            "fixture_date": row["fixture_date"],
+            "kickoff_time_local": "",
+            "home_team_id": home_team_id,
+            "home_team_name_source": home_name,
+            "away_team_id": away_team_id,
+            "away_team_name_source": away_name,
+            "home_score": row["home_score"],
+            "away_score": row["away_score"],
+            "result_status": "played",
+            "venue_id": "",
+            "venue_name_source": "",
+            "attendance": "",
+            "referee": "",
+            "match_report_url": "",
+            "rfef_acta_url": "",
+            "laliga_match_url": "",
+            "source_system": "LaLiga",
+            "source_url": row["source_url"],
+            "source_retrieved_at": NOW,
+            "data_confidence": "high",
+            "notes": "Generated from Stage 6A full Primera División 2021/22 extraction.",
+        })
+
+except Exception as e:
+    stage_6b_rows.append({
+        "fixture_id": "",
+        "season_id": "2021-22",
+        "competition_id": "PRIMERA_DIVISION",
+        "competition_name": "Primera División",
+        "competition_level": "1",
+        "competition_group": "",
+        "matchday": "",
+        "round_label": "",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "home_team_id": "",
+        "home_team_name_source": "",
+        "away_team_id": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "result_status": "",
+        "venue_id": "",
+        "venue_name_source": "",
+        "attendance": "",
+        "referee": "",
+        "match_report_url": "",
+        "rfef_acta_url": "",
+        "laliga_match_url": "",
+        "source_system": "LaLiga",
+        "source_url": "",
+        "source_retrieved_at": NOW,
+        "data_confidence": "failed",
+        "notes": f"Stage 6B failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "fixtures_results_stage_6b_primera_2021_22_full.csv",
+    stage_6b_fields,
+    stage_6b_rows,
+)
+
+# -----------------------------
+# Stage 6B validation summary
+# -----------------------------
+
+stage_6b_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+fixture_ids = [
+    row["fixture_id"]
+    for row in stage_6b_rows
+    if row.get("fixture_id")
+]
+
+duplicate_fixture_ids = sorted([
+    fixture_id
+    for fixture_id in set(fixture_ids)
+    if fixture_ids.count(fixture_id) > 1
+])
+
+failed_rows = [
+    row for row in stage_6b_rows
+    if row.get("data_confidence") == "failed"
+]
+
+stage_6b_validation_rows = [
+    {
+        "check_name": "fixture_rows",
+        "result": str(len(stage_6b_rows)),
+        "details": "Expected 380 rows for full Primera División 2021/22.",
+    },
+    {
+        "check_name": "failed_rows",
+        "result": str(len(failed_rows)),
+        "details": "Expected 0.",
+    },
+    {
+        "check_name": "duplicate_fixture_ids",
+        "result": str(len(duplicate_fixture_ids)),
+        "details": "|".join(duplicate_fixture_ids),
+    },
+]
+
+write_csv(
+    "stage_6b_primera_2021_22_validation_summary.csv",
+    stage_6b_validation_fields,
+    stage_6b_validation_rows,
+)
+
+print(f"Stage 6B generated {len(stage_6b_rows)} full app fixture rows.")
