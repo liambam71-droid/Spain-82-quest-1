@@ -1321,3 +1321,254 @@ except Exception as e:
 write_csv("stage_4d_laliga_jornada_1_fixtures.csv", stage_4d_fields, stage_4d_rows)
 
 print(f"Stage 4D extracted {len(stage_4d_rows)} fixture rows.")
+# -----------------------------
+# Stage 4G: Add autonomous region tags to Stage 4F team fixture index
+# -----------------------------
+
+team_region_map_fields = [
+    "team_id",
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+    "region_aliases",
+    "notes",
+]
+
+team_region_map_rows = [
+    {
+        "team_id": "VALENCIA",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "region_aliases": "Valencian Community|Comunitat Valenciana|Comunidad Valenciana|Valencia region",
+        "notes": "",
+    },
+    {
+        "team_id": "GETAFE",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+        "region_aliases": "Madrid|Community of Madrid|Comunidad de Madrid|Madrid region|Region of Madrid",
+        "notes": "",
+    },
+    {
+        "team_id": "MALLORCA",
+        "autonomous_region_id": "IB",
+        "autonomous_region_name": "Balearic Islands",
+        "autonomous_region_slug": "balearic-islands",
+        "region_aliases": "Balearic Islands|Illes Balears|Islas Baleares|Mallorca",
+        "notes": "",
+    },
+    {
+        "team_id": "REAL_BETIS",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+        "region_aliases": "Andalusia|Andalucía|Andalucia",
+        "notes": "",
+    },
+    {
+        "team_id": "CADIZ_CF",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+        "region_aliases": "Andalusia|Andalucía|Andalucia",
+        "notes": "",
+    },
+    {
+        "team_id": "LEVANTE",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "region_aliases": "Valencian Community|Comunitat Valenciana|Comunidad Valenciana|Valencia region",
+        "notes": "",
+    },
+    {
+        "team_id": "DEPORTIVO_ALAVES",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+        "region_aliases": "Basque Country|País Vasco|Euskadi|Euskal Herria",
+        "notes": "",
+    },
+    {
+        "team_id": "REAL_MADRID",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+        "region_aliases": "Madrid|Community of Madrid|Comunidad de Madrid|Madrid region|Region of Madrid",
+        "notes": "",
+    },
+    {
+        "team_id": "OSASUNA",
+        "autonomous_region_id": "NC",
+        "autonomous_region_name": "Navarre",
+        "autonomous_region_slug": "navarre",
+        "region_aliases": "Navarre|Navarra|Nafarroa",
+        "notes": "",
+    },
+    {
+        "team_id": "ESPANYOL",
+        "autonomous_region_id": "CT",
+        "autonomous_region_name": "Catalonia",
+        "autonomous_region_slug": "catalonia",
+        "region_aliases": "Catalonia|Catalunya|Cataluña",
+        "notes": "",
+    },
+    {
+        "team_id": "CELTA",
+        "autonomous_region_id": "GA",
+        "autonomous_region_name": "Galicia",
+        "autonomous_region_slug": "galicia",
+        "region_aliases": "Galicia|Galiza",
+        "notes": "",
+    },
+    {
+        "team_id": "ATLETICO_DE_MADRID",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+        "region_aliases": "Madrid|Community of Madrid|Comunidad de Madrid|Madrid region|Region of Madrid",
+        "notes": "",
+    },
+    {
+        "team_id": "BARCELONA",
+        "autonomous_region_id": "CT",
+        "autonomous_region_name": "Catalonia",
+        "autonomous_region_slug": "catalonia",
+        "region_aliases": "Catalonia|Catalunya|Cataluña",
+        "notes": "",
+    },
+    {
+        "team_id": "REAL_SOCIEDAD",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+        "region_aliases": "Basque Country|País Vasco|Euskadi|Euskal Herria",
+        "notes": "",
+    },
+    {
+        "team_id": "SEVILLA",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+        "region_aliases": "Andalusia|Andalucía|Andalucia",
+        "notes": "",
+    },
+    {
+        "team_id": "RAYO_VALLECANO",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+        "region_aliases": "Madrid|Community of Madrid|Comunidad de Madrid|Madrid region|Region of Madrid",
+        "notes": "",
+    },
+    {
+        "team_id": "VILLARREAL",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "region_aliases": "Valencian Community|Comunitat Valenciana|Comunidad Valenciana|Valencia region",
+        "notes": "",
+    },
+    {
+        "team_id": "GRANADA_CF",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+        "region_aliases": "Andalusia|Andalucía|Andalucia",
+        "notes": "",
+    },
+    {
+        "team_id": "ELCHE",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "region_aliases": "Valencian Community|Comunitat Valenciana|Comunidad Valenciana|Valencia region",
+        "notes": "",
+    },
+    {
+        "team_id": "ATHLETIC_CLUB",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+        "region_aliases": "Basque Country|País Vasco|Euskadi|Euskal Herria",
+        "notes": "",
+    },
+]
+
+write_csv("team_region_map_stage_4g.csv", team_region_map_fields, team_region_map_rows)
+
+region_lookup = {
+    row["team_id"]: row
+    for row in team_region_map_rows
+}
+
+stage_4g_rows = []
+
+try:
+    team_index_file = EXPORT_DIR / "team_fixture_index_stage_4f.csv"
+
+    with team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        team_index_rows = list(reader)
+
+    for row in team_index_rows:
+        team_region = region_lookup.get(row["team_id"], {})
+        opponent_region = region_lookup.get(row["opponent_team_id"], {})
+
+        row["team_autonomous_region_id"] = team_region.get("autonomous_region_id", "")
+        row["team_autonomous_region_name"] = team_region.get("autonomous_region_name", "")
+        row["team_autonomous_region_slug"] = team_region.get("autonomous_region_slug", "")
+
+        row["opponent_autonomous_region_id"] = opponent_region.get("autonomous_region_id", "")
+        row["opponent_autonomous_region_name"] = opponent_region.get("autonomous_region_name", "")
+        row["opponent_autonomous_region_slug"] = opponent_region.get("autonomous_region_slug", "")
+
+        stage_4g_rows.append(row)
+
+except Exception as e:
+    print(f"Stage 4G failed: {type(e).__name__}: {e}")
+
+write_csv("team_fixture_index_stage_4g_with_regions.csv", stage_4f_fields, stage_4g_rows)
+
+# Regional validation summary
+regional_summary_fields = [
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+    "team_count_in_stage_4g_sample",
+    "team_ids",
+]
+
+regional_summary = {}
+
+for row in team_region_map_rows:
+    region_id = row["autonomous_region_id"]
+
+    if region_id not in regional_summary:
+        regional_summary[region_id] = {
+            "autonomous_region_id": row["autonomous_region_id"],
+            "autonomous_region_name": row["autonomous_region_name"],
+            "autonomous_region_slug": row["autonomous_region_slug"],
+            "team_ids": set(),
+        }
+
+    regional_summary[region_id]["team_ids"].add(row["team_id"])
+
+regional_summary_rows = []
+
+for region in regional_summary.values():
+    team_ids = sorted(region["team_ids"])
+
+    regional_summary_rows.append({
+        "autonomous_region_id": region["autonomous_region_id"],
+        "autonomous_region_name": region["autonomous_region_name"],
+        "autonomous_region_slug": region["autonomous_region_slug"],
+        "team_count_in_stage_4g_sample": str(len(team_ids)),
+        "team_ids": "|".join(team_ids),
+    })
+
+write_csv("regional_summary_stage_4g.csv", regional_summary_fields, regional_summary_rows)
+
+print(f"Stage 4G generated {len(stage_4g_rows)} team fixture rows with autonomous region tags.")
