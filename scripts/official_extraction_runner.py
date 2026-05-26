@@ -342,5 +342,198 @@ The next stage will be to generate a source map for the official LaLiga and RFEF
 
 Path("validation_report.md").write_text(validation_report, encoding="utf-8")
 print("Created validation_report.md")
+# -----------------------------
+# Stage 3: Generate official source map
+# -----------------------------
+
+source_map_fields = [
+    "source_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "matchday",
+    "source_system",
+    "source_url",
+    "expected_match_count",
+    "status",
+    "last_checked_at",
+    "notes",
+]
+
+source_map_rows = []
+
+for season in ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]:
+
+    # Primera División / LaLiga
+    for matchday in range(1, 39):
+        source_map_rows.append({
+            "source_id": f"{season}_PRIMERA_DIVISION_J{matchday:02d}",
+            "season_id": season,
+            "competition_id": "PRIMERA_DIVISION",
+            "competition_name": "Primera División",
+            "competition_group": "",
+            "matchday": str(matchday),
+            "source_system": "LaLiga",
+            "source_url": f"https://www.laliga.com/laliga-easports/resultados/{season}/jornada-{matchday}",
+            "expected_match_count": "10",
+            "status": "pending",
+            "last_checked_at": "",
+            "notes": "",
+        })
+
+    # Segunda División / LaLiga Hypermotion
+    for matchday in range(1, 43):
+        source_map_rows.append({
+            "source_id": f"{season}_SEGUNDA_DIVISION_J{matchday:02d}",
+            "season_id": season,
+            "competition_id": "SEGUNDA_DIVISION",
+            "competition_name": "Segunda División",
+            "competition_group": "",
+            "matchday": str(matchday),
+            "source_system": "LaLiga",
+            "source_url": f"https://www.laliga.com/laliga-hypermotion/resultados/{season}/jornada-{matchday}",
+            "expected_match_count": "11",
+            "status": "pending",
+            "last_checked_at": "",
+            "notes": "",
+        })
+
+    # Primera Federación Group 1 placeholder
+    for matchday in range(1, 39):
+        source_map_rows.append({
+            "source_id": f"{season}_PRIMERA_FEDERACION_G1_J{matchday:02d}",
+            "season_id": season,
+            "competition_id": "PRIMERA_FEDERACION_G1",
+            "competition_name": "Primera Federación",
+            "competition_group": "Group 1",
+            "matchday": str(matchday),
+            "source_system": "RFEF",
+            "source_url": "",
+            "expected_match_count": "10",
+            "status": "source_url_required",
+            "last_checked_at": "",
+            "notes": "RFEF source URL to be discovered and added.",
+        })
+
+    # Primera Federación Group 2 placeholder
+    for matchday in range(1, 39):
+        source_map_rows.append({
+            "source_id": f"{season}_PRIMERA_FEDERACION_G2_J{matchday:02d}",
+            "season_id": season,
+            "competition_id": "PRIMERA_FEDERACION_G2",
+            "competition_name": "Primera Federación",
+            "competition_group": "Group 2",
+            "matchday": str(matchday),
+            "source_system": "RFEF",
+            "source_url": "",
+            "expected_match_count": "10",
+            "status": "source_url_required",
+            "last_checked_at": "",
+            "notes": "RFEF source URL to be discovered and added.",
+        })
+
+write_csv("official_source_map.csv", source_map_fields, source_map_rows)
+
+print(f"Stage 3 source map generated with {len(source_map_rows)} source rows.")
 
 print("Stage 2 template generation complete.")
+# Stage 3B: Add playoff fixtures to official source map
+# -----------------------------
+# Important:
+# Paste this block at the very bottom of scripts/official_extraction_runner.py,
+# underneath the Stage 3 source map block.
+#
+# This block updates official_source_map.csv so that the database includes
+# playoff fixture sources for:
+# - Segunda Divisió# -----------------------------
+n promotion playoffs
+# - Primera Federación Group 1 promotion playoffs
+# - Primera Federación Group 2 promotion playoffs
+#
+# Primera División / LaLiga regular top division does not have playoffs.
+
+# Add phase/round columns if they are not already in the source map.
+for extra_field in ["fixture_phase", "round_label"]:
+    if extra_field not in source_map_fields:
+        source_map_fields.append(extra_field)
+
+# Backfill the regular-season rows created in Stage 3.
+for row in source_map_rows:
+    row.setdefault("fixture_phase", "regular_season")
+    row.setdefault("round_label", f"Jornada {row.get('matchday', '')}".strip())
+
+# Playoff round structure.
+# These are source-map placeholders. The live extraction stage will later attach
+# the exact official LaLiga/RFEF source URLs for each season and round.
+playoff_rounds = [
+    {
+        "round_code": "SF1",
+        "round_label": "Promotion playoff semi-final first leg",
+        "expected_match_count": "2",
+    },
+    {
+        "round_code": "SF2",
+        "round_label": "Promotion playoff semi-final second leg",
+        "expected_match_count": "2",
+    },
+    {
+        "round_code": "F1",
+        "round_label": "Promotion playoff final first leg",
+        "expected_match_count": "1",
+    },
+    {
+        "round_code": "F2",
+        "round_label": "Promotion playoff final second leg",
+        "expected_match_count": "1",
+    },
+]
+
+playoff_competitions = [
+    {
+        "competition_id": "SEGUNDA_DIVISION",
+        "competition_name": "Segunda División",
+        "competition_group": "",
+        "source_system": "LaLiga",
+        "notes": "Promotion playoff source URL to be discovered and added from official LaLiga source.",
+    },
+    {
+        "competition_id": "PRIMERA_FEDERACION_G1",
+        "competition_name": "Primera Federación",
+        "competition_group": "Group 1",
+        "source_system": "RFEF",
+        "notes": "Promotion playoff source URL to be discovered and added from official RFEF source.",
+    },
+    {
+        "competition_id": "PRIMERA_FEDERACION_G2",
+        "competition_name": "Primera Federación",
+        "competition_group": "Group 2",
+        "source_system": "RFEF",
+        "notes": "Promotion playoff source URL to be discovered and added from official RFEF source.",
+    },
+]
+
+for season in ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]:
+    for competition in playoff_competitions:
+        for playoff_round in playoff_rounds:
+            source_map_rows.append({
+                "source_id": f"{season}_{competition['competition_id']}_PLAYOFF_{playoff_round['round_code']}",
+                "season_id": season,
+                "competition_id": competition["competition_id"],
+                "competition_name": competition["competition_name"],
+                "competition_group": competition["competition_group"],
+                "matchday": "",
+                "fixture_phase": "promotion_playoff",
+                "round_label": playoff_round["round_label"],
+                "source_system": competition["source_system"],
+                "source_url": "",
+                "expected_match_count": playoff_round["expected_match_count"],
+                "status": "source_url_required",
+                "last_checked_at": "",
+                "notes": competition["notes"],
+            })
+
+# Re-write the source map with regular-season and playoff rows included.
+write_csv("official_source_map.csv", source_map_fields, source_map_rows)
+
+print(f"Stage 3B playoff source map rows added. Total source rows now: {len(source_map_rows)}")
