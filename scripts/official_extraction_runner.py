@@ -859,3 +859,87 @@ except Exception as e:
 write_csv("stage_4c_laliga_json_key_scan.csv", json_scan_fields, json_scan_rows)
 
 print(f"Stage 4C JSON key scan complete with {len(json_scan_rows)} rows.")
+# -----------------------------
+# Stage 4D: Extract actual LaLiga Jornada 1 fixture rows
+# -----------------------------
+
+stage_4d_fields = [
+    "source_url",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "matchday",
+    "fixture_date",
+    "home_team_name_source",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "extraction_method",
+    "data_confidence",
+    "notes",
+]
+
+stage_4d_rows = []
+
+try:
+    json_path = EXPORT_DIR / "stage_4b_laliga_next_data.json"
+
+    with json_path.open("r", encoding="utf-8") as f:
+        next_data = json.load(f)
+
+    matches = next_data["props"]["pageProps"]["matches"]
+
+    for match in matches:
+        home_team = match.get("home_team", {})
+        away_team = match.get("away_team", {})
+
+        home_name = (
+            home_team.get("name")
+            or home_team.get("nickname")
+            or home_team.get("short_name")
+            or ""
+        )
+
+        away_name = (
+            away_team.get("name")
+            or away_team.get("nickname")
+            or away_team.get("short_name")
+            or ""
+        )
+
+        stage_4d_rows.append({
+            "source_url": "https://www.laliga.com/laliga-easports/resultados/2021-22/jornada-1",
+            "season_id": "2021-22",
+            "competition_id": "PRIMERA_DIVISION",
+            "competition_name": "Primera División",
+            "matchday": "1",
+            "fixture_date": match.get("date", ""),
+            "home_team_name_source": home_name,
+            "away_team_name_source": away_name,
+            "home_score": match.get("home_score", ""),
+            "away_score": match.get("away_score", ""),
+            "extraction_method": "next_data_props_pageProps_matches",
+            "data_confidence": "high",
+            "notes": "",
+        })
+
+except Exception as e:
+    stage_4d_rows.append({
+        "source_url": "https://www.laliga.com/laliga-easports/resultados/2021-22/jornada-1",
+        "season_id": "2021-22",
+        "competition_id": "PRIMERA_DIVISION",
+        "competition_name": "Primera División",
+        "matchday": "1",
+        "fixture_date": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "extraction_method": "failed",
+        "data_confidence": "failed",
+        "notes": f"Error: {type(e).__name__}: {e}",
+    })
+
+write_csv("stage_4d_laliga_jornada_1_fixtures.csv", stage_4d_fields, stage_4d_rows)
+
+print(f"Stage 4D extracted {len(stage_4d_rows)} fixture rows.")
