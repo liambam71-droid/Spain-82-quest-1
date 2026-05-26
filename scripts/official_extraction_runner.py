@@ -537,3 +537,73 @@ for season in ["2021-22", "2022-23", "2023-24", "2024-25", "2025-26"]:
 write_csv("official_source_map.csv", source_map_fields, source_map_rows)
 
 print(f"Stage 3B playoff source map rows added. Total source rows now: {len(source_map_rows)}")
+# -----------------------------
+# Stage 4A: Test connection to official LaLiga source
+# -----------------------------
+
+import urllib.request
+import urllib.error
+
+connection_test_fields = [
+    "test_name",
+    "source_url",
+    "http_status",
+    "success",
+    "checked_at",
+    "notes",
+]
+
+connection_test_rows = []
+
+test_url = "https://www.laliga.com/laliga-easports/resultados/2021-22/jornada-1"
+
+try:
+    request = urllib.request.Request(
+        test_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+        }
+    )
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        status_code = response.getcode()
+        page_content = response.read().decode("utf-8", errors="ignore")
+
+    success = status_code == 200 and len(page_content) > 1000
+
+    connection_test_rows.append({
+        "test_name": "LaLiga Primera División Jornada 1 connection test",
+        "source_url": test_url,
+        "http_status": str(status_code),
+        "success": str(success).lower(),
+        "checked_at": NOW,
+        "notes": f"Downloaded {len(page_content)} characters from official LaLiga page.",
+    })
+
+    # Save a small raw HTML sample for inspection.
+    raw_sample_path = EXPORT_DIR / "laliga_connection_test_sample.html"
+    raw_sample_path.write_text(page_content[:5000], encoding="utf-8")
+
+except urllib.error.HTTPError as e:
+    connection_test_rows.append({
+        "test_name": "LaLiga Primera División Jornada 1 connection test",
+        "source_url": test_url,
+        "http_status": str(e.code),
+        "success": "false",
+        "checked_at": NOW,
+        "notes": f"HTTPError: {e.reason}",
+    })
+
+except Exception as e:
+    connection_test_rows.append({
+        "test_name": "LaLiga Primera División Jornada 1 connection test",
+        "source_url": test_url,
+        "http_status": "",
+        "success": "false",
+        "checked_at": NOW,
+        "notes": f"Error: {type(e).__name__}: {e}",
+    })
+
+write_csv("laliga_connection_test.csv", connection_test_fields, connection_test_rows)
+
+print("Stage 4A LaLiga connection test complete.")
