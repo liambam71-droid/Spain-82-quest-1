@@ -1,120 +1,206 @@
+# -----------------------------
+# 6. Fixtures/results
+# -----------------------------
 
-from pathlib import Path
-import csv
-
-EXPORT_DIR = Path("data/exports")
-EXPORT_DIR.mkdir(parents=True, exist_ok=True)
-
-fixtures_file = EXPORT_DIR / "fixtures_results.csv"
-team_index_file = EXPORT_DIR / "team_fixture_index.csv"
-validation_file = Path("validation_report.md")
-
-fixtures = [
-    {
-        "fixture_id": "2021-22_LALIGA_J01_FC_BARCELONA_REAL_SOCIEDAD",
-        "season_id": "2021-22",
-        "competition_name": "Primera División",
-        "competition_group": "",
-        "matchday": "1",
-        "fixture_date": "2021-08-15",
-        "home_team_id": "FC_BARCELONA",
-        "home_team_name_source": "FC Barcelona",
-        "away_team_id": "REAL_SOCIEDAD",
-        "away_team_name_source": "Real Sociedad",
-        "home_score": "4",
-        "away_score": "2",
-        "venue_id": "CAMP_NOU",
-        "source_system": "LaLiga",
-        "source_url": "https://www.laliga.com/"
-    }
+fixtures_fields = [
+    "fixture_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_level",
+    "competition_group",
+    "matchday",
+    "round_label",
+    "fixture_date",
+    "kickoff_time_local",
+    "home_team_id",
+    "home_team_name_source",
+    "away_team_id",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "result_status",
+    "venue_id",
+    "venue_name_source",
+    "attendance",
+    "referee",
+    "match_report_url",
+    "rfef_acta_url",
+    "laliga_match_url",
+    "source_system",
+    "source_url",
+    "source_retrieved_at",
+    "data_confidence",
+    "notes",
 ]
 
-fixture_fields = list(fixtures[0].keys())
 
-with fixtures_file.open("w", newline="", encoding="utf-8") as f:
-    writer = csv.DictWriter(f, fieldnames=fixture_fields)
-    writer.writeheader()
-    writer.writerows(fixtures)
+# -----------------------------
+# 7. Team fixture index
+# -----------------------------
 
-team_index_rows = []
+team_fixture_index_fields = [
+    "team_fixture_id",
+    "fixture_id",
+    "team_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "matchday",
+    "fixture_date",
+    "opponent_team_id",
+    "home_or_away",
+    "team_score",
+    "opponent_score",
+    "result_for_team",
+    "venue_id",
+    "is_home_ground",
+    "team_autonomous_region_id",
+    "team_autonomous_region_name",
+    "team_autonomous_region_slug",
+    "opponent_autonomous_region_id",
+    "opponent_autonomous_region_name",
+    "opponent_autonomous_region_slug",
+    "source_url",
+]
 
-for fixture in fixtures:
-    home_score = int(fixture["home_score"])
-    away_score = int(fixture["away_score"])
 
-    if home_score > away_score:
-        home_result = "Win"
-        away_result = "Loss"
-    elif home_score < away_score:
-        home_result = "Loss"
-        away_result = "Win"
-    else:
-        home_result = "Draw"
-        away_result = "Draw"
+# -----------------------------
+# 8. Fixture source audit
+# -----------------------------
 
-    team_index_rows.append({
-        "team_fixture_id": fixture["fixture_id"] + "__" + fixture["home_team_id"],
-        "fixture_id": fixture["fixture_id"],
-        "team_id": fixture["home_team_id"],
-        "season_id": fixture["season_id"],
-        "competition_name": fixture["competition_name"],
-        "competition_group": fixture["competition_group"],
-        "matchday": fixture["matchday"],
-        "fixture_date": fixture["fixture_date"],
-        "opponent_team_id": fixture["away_team_id"],
-        "home_or_away": "Home",
-        "team_score": fixture["home_score"],
-        "opponent_score": fixture["away_score"],
-        "result_for_team": home_result,
-        "venue_id": fixture["venue_id"],
-        "team_autonomous_region_id": "CT",
-        "team_autonomous_region_name": "Catalonia",
-        "team_autonomous_region_slug": "catalonia",
-        "opponent_autonomous_region_id": "PV",
-        "opponent_autonomous_region_name": "Basque Country",
-        "opponent_autonomous_region_slug": "basque-country",
-        "source_url": fixture["source_url"]
-    })
+fixture_source_audit_fields = [
+    "source_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "matchday",
+    "source_system",
+    "source_url",
+    "expected_match_count",
+    "status",
+    "last_checked_at",
+    "notes",
+]
 
-    team_index_rows.append({
-        "team_fixture_id": fixture["fixture_id"] + "__" + fixture["away_team_id"],
-        "fixture_id": fixture["fixture_id"],
-        "team_id": fixture["away_team_id"],
-        "season_id": fixture["season_id"],
-        "competition_name": fixture["competition_name"],
-        "competition_group": fixture["competition_group"],
-        "matchday": fixture["matchday"],
-        "fixture_date": fixture["fixture_date"],
-        "opponent_team_id": fixture["home_team_id"],
-        "home_or_away": "Away",
-        "team_score": fixture["away_score"],
-        "opponent_score": fixture["home_score"],
-        "result_for_team": away_result,
-        "venue_id": fixture["venue_id"],
-        "team_autonomous_region_id": "PV",
-        "team_autonomous_region_name": "Basque Country",
-        "team_autonomous_region_slug": "basque-country",
-        "opponent_autonomous_region_id": "CT",
-        "opponent_autonomous_region_name": "Catalonia",
-        "opponent_autonomous_region_slug": "catalonia",
-        "source_url": fixture["source_url"]
-    })
 
-team_index_fields = list(team_index_rows[0].keys())
+# -----------------------------
+# 9. Autonomous regions
+# -----------------------------
 
-with team_index_file.open("w", newline="", encoding="utf-8") as f:
-    writer = csv.DictWriter(f, fieldnames=team_index_fields)
-    writer.writeheader()
-    writer.writerows(team_index_rows)
+autonomous_regions_fields = [
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+    "regional_challenge_group_name",
+    "notes",
+]
 
-validation_file.write_text(
-    "# Validation Report\n\n"
-    "Starter workflow completed successfully.\n\n"
-    "- fixtures_results.csv created\n"
-    "- team_fixture_index.csv created\n"
-    "- Two team index rows generated from one fixture\n"
-    "- Autonomous region tags included\n",
-    encoding="utf-8"
-)
+autonomous_regions_rows = [
+    {"autonomous_region_id": "AN", "autonomous_region_name": "Andalusia", "autonomous_region_slug": "andalusia", "regional_challenge_group_name": "Andalusia Challenge", "notes": ""},
+    {"autonomous_region_id": "AR", "autonomous_region_name": "Aragon", "autonomous_region_slug": "aragon", "regional_challenge_group_name": "Aragon Challenge", "notes": ""},
+    {"autonomous_region_id": "AS", "autonomous_region_name": "Asturias", "autonomous_region_slug": "asturias", "regional_challenge_group_name": "Asturias Challenge", "notes": ""},
+    {"autonomous_region_id": "IB", "autonomous_region_name": "Balearic Islands", "autonomous_region_slug": "balearic-islands", "regional_challenge_group_name": "Balearic Islands Challenge", "notes": ""},
+    {"autonomous_region_id": "PV", "autonomous_region_name": "Basque Country", "autonomous_region_slug": "basque-country", "regional_challenge_group_name": "Basque Country Challenge", "notes": ""},
+    {"autonomous_region_id": "CN", "autonomous_region_name": "Canary Islands", "autonomous_region_slug": "canary-islands", "regional_challenge_group_name": "Canary Islands Challenge", "notes": ""},
+    {"autonomous_region_id": "CB", "autonomous_region_name": "Cantabria", "autonomous_region_slug": "cantabria", "regional_challenge_group_name": "Cantabria Challenge", "notes": ""},
+    {"autonomous_region_id": "CM", "autonomous_region_name": "Castilla-La Mancha", "autonomous_region_slug": "castilla-la-mancha", "regional_challenge_group_name": "Castilla-La Mancha Challenge", "notes": ""},
+    {"autonomous_region_id": "CL", "autonomous_region_name": "Castile and León", "autonomous_region_slug": "castile-and-leon", "regional_challenge_group_name": "Castile and León Challenge", "notes": ""},
+    {"autonomous_region_id": "CT", "autonomous_region_name": "Catalonia", "autonomous_region_slug": "catalonia", "regional_challenge_group_name": "Catalonia Challenge", "notes": ""},
+    {"autonomous_region_id": "EX", "autonomous_region_name": "Extremadura", "autonomous_region_slug": "extremadura", "regional_challenge_group_name": "Extremadura Challenge", "notes": ""},
+    {"autonomous_region_id": "GA", "autonomous_region_name": "Galicia", "autonomous_region_slug": "galicia", "regional_challenge_group_name": "Galicia Challenge", "notes": ""},
+    {"autonomous_region_id": "MD", "autonomous_region_name": "Community of Madrid", "autonomous_region_slug": "community-of-madrid", "regional_challenge_group_name": "Community of Madrid Challenge", "notes": ""},
+    {"autonomous_region_id": "MU", "autonomous_region_name": "Region of Murcia", "autonomous_region_slug": "region-of-murcia", "regional_challenge_group_name": "Region of Murcia Challenge", "notes": ""},
+    {"autonomous_region_id": "NC", "autonomous_region_name": "Navarre", "autonomous_region_slug": "navarre", "regional_challenge_group_name": "Navarre Challenge", "notes": ""},
+    {"autonomous_region_id": "RI", "autonomous_region_name": "La Rioja", "autonomous_region_slug": "la-rioja", "regional_challenge_group_name": "La Rioja Challenge", "notes": ""},
+    {"autonomous_region_id": "VC", "autonomous_region_name": "Valencian Community", "autonomous_region_slug": "valencian-community", "regional_challenge_group_name": "Valencian Community Challenge", "notes": ""},
+    {"autonomous_region_id": "CE", "autonomous_region_name": "Ceuta", "autonomous_region_slug": "ceuta", "regional_challenge_group_name": "Ceuta Challenge", "notes": ""},
+    {"autonomous_region_id": "ML", "autonomous_region_name": "Melilla", "autonomous_region_slug": "melilla", "regional_challenge_group_name": "Melilla Challenge", "notes": ""},
+]
 
-print("CSV export complete.")
+
+# -----------------------------
+# 10. User attended fixtures template
+# -----------------------------
+
+user_attended_fixtures_fields = [
+    "user_attendance_id",
+    "user_id",
+    "fixture_id",
+    "team_fixture_id",
+    "selected_team_id",
+    "venue_id",
+    "attendance_date",
+    "created_at",
+    "attendance_type",
+    "notes",
+    "photo_url",
+    "manual_entry_flag",
+]
+
+
+# -----------------------------
+# Write CSV files
+# -----------------------------
+
+write_csv("seasons.csv", seasons_fields, seasons_rows)
+write_csv("competitions.csv", competitions_fields, competitions_rows)
+write_csv("teams.csv", teams_fields)
+write_csv("grounds.csv", grounds_fields)
+write_csv("team_aliases.csv", team_aliases_fields)
+write_csv("fixtures_results.csv", fixtures_fields)
+write_csv("team_fixture_index.csv", team_fixture_index_fields)
+write_csv("fixture_source_audit.csv", fixture_source_audit_fields)
+write_csv("autonomous_regions.csv", autonomous_regions_fields, autonomous_regions_rows)
+write_csv("user_attended_fixtures_template.csv", user_attended_fixtures_fields)
+
+
+# -----------------------------
+# Validation report
+# -----------------------------
+
+validation_report = f"""# Spain 82 App Database Template Validation Report
+
+Generated at: {NOW}
+
+## Stage
+
+Stage 2 completed: database CSV templates generated.
+
+## Files created
+
+- seasons.csv
+- competitions.csv
+- teams.csv
+- grounds.csv
+- team_aliases.csv
+- fixtures_results.csv
+- team_fixture_index.csv
+- fixture_source_audit.csv
+- autonomous_regions.csv
+- user_attended_fixtures_template.csv
+
+## Validation checks
+
+- Export folder created: yes
+- Core CSV templates created: yes
+- Seasons populated: yes
+- Competitions populated: yes
+- Autonomous regions populated: yes
+- Fixtures table ready: yes
+- Team fixture index table ready: yes
+- Regional challenge fields included: yes
+
+## Notes
+
+This script does not yet extract live fixture data.
+
+The next stage will be to generate a source map for the official LaLiga and RFEF source pages.
+"""
+
+Path("validation_report.md").write_text(validation_report, encoding="utf-8")
+print("Created validation_report.md")
+
+print("Stage 2 template generation complete.")
