@@ -747,3 +747,115 @@ except Exception as e:
 write_csv("raw_laliga_stage_4b_jornada_1.csv", raw_laliga_fields, raw_laliga_rows)
 
 print("Stage 4B LaLiga raw extraction inspection complete.")
+# -----------------------------
+# Stage 4C: Inspect LaLiga embedded JSON structure
+# -----------------------------
+
+json_scan_fields = [
+    "json_path",
+    "value_type",
+    "value_preview",
+    "keyword_match",
+    "notes",
+]
+
+json_scan_rows = []
+
+keywords = [
+    "match",
+    "matches",
+    "fixture",
+    "fixtures",
+    "home",
+    "away",
+    "score",
+    "team",
+    "teams",
+    "result",
+    "date",
+    "kickoff",
+    "calendar",
+    "jornada",
+]
+
+
+def scan_json(obj, path="root", depth=0, max_depth=8):
+    """Recursively scan JSON keys/values for fixture-like data."""
+    if depth > max_depth:
+        return
+
+    if isinstance(obj, dict):
+        for key, value in obj.items():
+            key_str = str(key)
+            new_path = f"{path}.{key_str}"
+
+            matched_keywords = [
+                word for word in keywords
+                if word.lower() in key_str.lower()
+            ]
+
+            if matched_keywords:
+                preview = ""
+
+                if isinstance(value, (str, int, float, bool)) or value is None:
+                    preview = str(value)[:250]
+                elif isinstance(value, list):
+                    preview = f"List with {len(value)} items"
+                elif isinstance(value, dict):
+                    preview = f"Dict with {len(value)} keys"
+
+                json_scan_rows.append({
+                    "json_path": new_path,
+                    "value_type": type(value).__name__,
+                    "value_preview": preview,
+                    "keyword_match": ", ".join(matched_keywords),
+                    "notes": "Key matched fixture-related keyword.",
+                })
+
+            scan_json(value, new_path, depth + 1, max_depth)
+
+    elif isinstance(obj, list):
+        for index, item in enumerate(obj[:20]):
+            new_path = f"{path}[{index}]"
+            scan_json(item, new_path, depth + 1, max_depth)
+
+
+try:
+    json_path = EXPORT_DIR / "stage_4b_laliga_next_data.json"
+
+    if json_path.exists():
+        with json_path.open("r", encoding="utf-8") as f:
+            next_data_for_scan = json.load(f)
+
+        scan_json(next_data_for_scan)
+
+        if not json_scan_rows:
+            json_scan_rows.append({
+                "json_path": "root",
+                "value_type": type(next_data_for_scan).__name__,
+                "value_preview": "No keyword matches found",
+                "keyword_match": "",
+                "notes": "JSON was loaded but no likely fixture-related keys were found.",
+            })
+
+    else:
+        json_scan_rows.append({
+            "json_path": "",
+            "value_type": "",
+            "value_preview": "",
+            "keyword_match": "",
+            "notes": "stage_4b_laliga_next_data.json was not found. Run Stage 4B first.",
+        })
+
+except Exception as e:
+    json_scan_rows.append({
+        "json_path": "",
+        "value_type": "",
+        "value_preview": "",
+        "keyword_match": "",
+        "notes": f"Error scanning JSON: {type(e).__name__}: {e}",
+    })
+
+write_csv("stage_4c_laliga_json_key_scan.csv", json_scan_fields, json_scan_rows)
+
+print(f"Stage 4C JSON key scan complete with {len(json_scan_rows)} rows.")
