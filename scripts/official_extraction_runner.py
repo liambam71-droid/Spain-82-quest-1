@@ -1572,3 +1572,181 @@ for region in regional_summary.values():
 write_csv("regional_summary_stage_4g.csv", regional_summary_fields, regional_summary_rows)
 
 print(f"Stage 4G generated {len(stage_4g_rows)} team fixture rows with autonomous region tags.")
+# -----------------------------
+# Stage 4G2: Correct region tags using exact LaLiga team IDs
+# -----------------------------
+
+team_region_map_stage_4g2_rows = [
+    {
+        "team_id": "VALENCIA_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+    },
+    {
+        "team_id": "GETAFE_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "REAL_CLUB_DEPORTIVO_MALLORCA_SAD",
+        "autonomous_region_id": "IB",
+        "autonomous_region_name": "Balearic Islands",
+        "autonomous_region_slug": "balearic-islands",
+    },
+    {
+        "team_id": "REAL_BETIS_BALOMPIE_SAD",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+    },
+    {
+        "team_id": "CADIZ_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+    },
+    {
+        "team_id": "LEVANTE_UNION_DEPORTIVA_SAD",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+    },
+    {
+        "team_id": "DEPORTIVO_ALAVES_SAD",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+    },
+    {
+        "team_id": "REAL_MADRID_CLUB_DE_FUTBOL",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "CLUB_ATLETICO_OSASUNA",
+        "autonomous_region_id": "NC",
+        "autonomous_region_name": "Navarre",
+        "autonomous_region_slug": "navarre",
+    },
+    {
+        "team_id": "RCD_ESPANYOL_DE_BARCELONA",
+        "autonomous_region_id": "CT",
+        "autonomous_region_name": "Catalonia",
+        "autonomous_region_slug": "catalonia",
+    },
+    {
+        "team_id": "REAL_CLUB_CELTA_DE_VIGO_SAD",
+        "autonomous_region_id": "GA",
+        "autonomous_region_name": "Galicia",
+        "autonomous_region_slug": "galicia",
+    },
+    {
+        "team_id": "CLUB_ATLETICO_DE_MADRID_SAD",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "FUTBOL_CLUB_BARCELONA",
+        "autonomous_region_id": "CT",
+        "autonomous_region_name": "Catalonia",
+        "autonomous_region_slug": "catalonia",
+    },
+    {
+        "team_id": "REAL_SOCIEDAD_DE_FUTBOL_SAD",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+    },
+    {
+        "team_id": "SEVILLA_FUTBOL_CLUB_SAD",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+    },
+    {
+        "team_id": "RAYO_VALLECANO_DE_MADRID_SAD",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "VILLARREAL_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+    },
+    {
+        "team_id": "GRANADA_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+    },
+    {
+        "team_id": "ELCHE_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+    },
+    {
+        "team_id": "ATHLETIC_CLUB",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+    },
+]
+
+team_region_map_stage_4g2_fields = [
+    "team_id",
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+]
+
+write_csv(
+    "team_region_map_stage_4g2_exact_laliga_ids.csv",
+    team_region_map_stage_4g2_fields,
+    team_region_map_stage_4g2_rows,
+)
+
+region_lookup_4g2 = {
+    row["team_id"]: row
+    for row in team_region_map_stage_4g2_rows
+}
+
+stage_4g2_rows = []
+
+try:
+    team_index_file = EXPORT_DIR / "team_fixture_index_stage_4f.csv"
+
+    with team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        team_index_rows = list(reader)
+
+    for row in team_index_rows:
+        team_region = region_lookup_4g2.get(row["team_id"], {})
+        opponent_region = region_lookup_4g2.get(row["opponent_team_id"], {})
+
+        row["team_autonomous_region_id"] = team_region.get("autonomous_region_id", "")
+        row["team_autonomous_region_name"] = team_region.get("autonomous_region_name", "")
+        row["team_autonomous_region_slug"] = team_region.get("autonomous_region_slug", "")
+
+        row["opponent_autonomous_region_id"] = opponent_region.get("autonomous_region_id", "")
+        row["opponent_autonomous_region_name"] = opponent_region.get("autonomous_region_name", "")
+        row["opponent_autonomous_region_slug"] = opponent_region.get("autonomous_region_slug", "")
+
+        stage_4g2_rows.append(row)
+
+except Exception as e:
+    print(f"Stage 4G2 failed: {type(e).__name__}: {e}")
+
+write_csv(
+    "team_fixture_index_stage_4g2_with_regions.csv",
+    stage_4f_fields,
+    stage_4g2_rows,
+)
+
+print(f"Stage 4G2 generated {len(stage_4g2_rows)} team fixture rows with corrected region tags.")
