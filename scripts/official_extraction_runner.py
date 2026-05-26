@@ -2118,3 +2118,107 @@ write_csv(
 )
 
 print(f"Stage 5C generated {len(stage_5c_rows)} team fixture index rows.")
+# -----------------------------
+# Stage 5D: Add autonomous region tags to Primera División 2021/22 matchdays 1-3 team fixture index
+# -----------------------------
+
+stage_5d_rows = []
+
+try:
+    # Use the corrected exact LaLiga team ID region map from Stage 4G2
+    region_map_file = EXPORT_DIR / "team_region_map_stage_4g2_exact_laliga_ids.csv"
+
+    with region_map_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        region_map_rows = list(reader)
+
+    region_lookup = {
+        row["team_id"]: row
+        for row in region_map_rows
+    }
+
+    team_index_file = EXPORT_DIR / "team_fixture_index_stage_5c_primera_2021_22_j1_to_j3.csv"
+
+    with team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        team_index_rows = list(reader)
+
+    for row in team_index_rows:
+        team_region = region_lookup.get(row["team_id"], {})
+        opponent_region = region_lookup.get(row["opponent_team_id"], {})
+
+        row["team_autonomous_region_id"] = team_region.get("autonomous_region_id", "")
+        row["team_autonomous_region_name"] = team_region.get("autonomous_region_name", "")
+        row["team_autonomous_region_slug"] = team_region.get("autonomous_region_slug", "")
+
+        row["opponent_autonomous_region_id"] = opponent_region.get("autonomous_region_id", "")
+        row["opponent_autonomous_region_name"] = opponent_region.get("autonomous_region_name", "")
+        row["opponent_autonomous_region_slug"] = opponent_region.get("autonomous_region_slug", "")
+
+        stage_5d_rows.append(row)
+
+except Exception as e:
+    print(f"Stage 5D failed: {type(e).__name__}: {e}")
+
+write_csv(
+    "team_fixture_index_stage_5d_primera_2021_22_j1_to_j3_with_regions.csv",
+    stage_5c_fields,
+    stage_5d_rows,
+)
+
+# -----------------------------
+# Stage 5D validation summary
+# -----------------------------
+
+stage_5d_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+missing_team_regions = [
+    row for row in stage_5d_rows
+    if not row.get("team_autonomous_region_id")
+]
+
+missing_opponent_regions = [
+    row for row in stage_5d_rows
+    if not row.get("opponent_autonomous_region_id")
+]
+
+unique_regions = sorted(set(
+    row["team_autonomous_region_name"]
+    for row in stage_5d_rows
+    if row.get("team_autonomous_region_name")
+))
+
+stage_5d_validation_rows = [
+    {
+        "check_name": "team_fixture_index_rows",
+        "result": str(len(stage_5d_rows)),
+        "details": "Expected 60 rows for 30 fixtures.",
+    },
+    {
+        "check_name": "missing_team_region_tags",
+        "result": str(len(missing_team_regions)),
+        "details": "Expected 0.",
+    },
+    {
+        "check_name": "missing_opponent_region_tags",
+        "result": str(len(missing_opponent_regions)),
+        "details": "Expected 0.",
+    },
+    {
+        "check_name": "unique_regions_in_sample",
+        "result": str(len(unique_regions)),
+        "details": "|".join(unique_regions),
+    },
+]
+
+write_csv(
+    "stage_5d_region_validation_summary.csv",
+    stage_5d_validation_fields,
+    stage_5d_validation_rows,
+)
+
+print(f"Stage 5D generated {len(stage_5d_rows)} team fixture rows with autonomous region tags.")
