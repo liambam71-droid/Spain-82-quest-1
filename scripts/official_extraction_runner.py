@@ -607,3 +607,143 @@ except Exception as e:
 write_csv("laliga_connection_test.csv", connection_test_fields, connection_test_rows)
 
 print("Stage 4A LaLiga connection test complete.")
+# -----------------------------
+# Stage 4B: Extract one LaLiga matchday page into raw fixture candidates
+# -----------------------------
+
+import re
+import json
+
+raw_laliga_fields = [
+    "source_url",
+    "season_id",
+    "competition_id",
+    "matchday",
+    "extraction_method",
+    "raw_home_team",
+    "raw_away_team",
+    "raw_home_score",
+    "raw_away_score",
+    "raw_date",
+    "raw_time",
+    "raw_match_url",
+    "data_confidence",
+    "notes",
+]
+
+raw_laliga_rows = []
+
+stage_4b_url = "https://www.laliga.com/laliga-easports/resultados/2021-22/jornada-1"
+
+try:
+    request = urllib.request.Request(
+        stage_4b_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+        }
+    )
+
+    with urllib.request.urlopen(request, timeout=30) as response:
+        status_code = response.getcode()
+        html = response.read().decode("utf-8", errors="ignore")
+
+    # Save full raw HTML for inspection/debugging.
+    raw_html_path = EXPORT_DIR / "stage_4b_laliga_jornada_1_raw.html"
+    raw_html_path.write_text(html, encoding="utf-8")
+
+    # First attempt: look for embedded Next.js JSON data.
+    next_data_match = re.search(
+        r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+        html,
+        re.DOTALL
+    )
+
+    if next_data_match:
+        try:
+            next_data = json.loads(next_data_match.group(1))
+
+            # Save embedded JSON for inspection.
+            json_path = EXPORT_DIR / "stage_4b_laliga_next_data.json"
+            json_path.write_text(
+                json.dumps(next_data, ensure_ascii=False, indent=2),
+                encoding="utf-8"
+            )
+
+            # At this stage we are not assuming the exact nested structure.
+            # We create an inspection row confirming that JSON was found.
+            raw_laliga_rows.append({
+                "source_url": stage_4b_url,
+                "season_id": "2021-22",
+                "competition_id": "PRIMERA_DIVISION",
+                "matchday": "1",
+                "extraction_method": "next_data_detected",
+                "raw_home_team": "",
+                "raw_away_team": "",
+                "raw_home_score": "",
+                "raw_away_score": "",
+                "raw_date": "",
+                "raw_time": "",
+                "raw_match_url": "",
+                "data_confidence": "inspection_required",
+                "notes": "Embedded __NEXT_DATA__ JSON found and saved for structure inspection.",
+            })
+
+        except Exception as e:
+            raw_laliga_rows.append({
+                "source_url": stage_4b_url,
+                "season_id": "2021-22",
+                "competition_id": "PRIMERA_DIVISION",
+                "matchday": "1",
+                "extraction_method": "next_data_parse_failed",
+                "raw_home_team": "",
+                "raw_away_team": "",
+                "raw_home_score": "",
+                "raw_away_score": "",
+                "raw_date": "",
+                "raw_time": "",
+                "raw_match_url": "",
+                "data_confidence": "failed",
+                "notes": f"Found __NEXT_DATA__ but could not parse JSON: {type(e).__name__}: {e}",
+            })
+
+    else:
+        # Fallback: record that no embedded JSON was found.
+        # The saved raw HTML will be used to decide the next parser route.
+        raw_laliga_rows.append({
+            "source_url": stage_4b_url,
+            "season_id": "2021-22",
+            "competition_id": "PRIMERA_DIVISION",
+            "matchday": "1",
+            "extraction_method": "raw_html_saved",
+            "raw_home_team": "",
+            "raw_away_team": "",
+            "raw_home_score": "",
+            "raw_away_score": "",
+            "raw_date": "",
+            "raw_time": "",
+            "raw_match_url": "",
+            "data_confidence": "inspection_required",
+            "notes": "No __NEXT_DATA__ JSON found. Raw HTML saved for inspection.",
+        })
+
+except Exception as e:
+    raw_laliga_rows.append({
+        "source_url": stage_4b_url,
+        "season_id": "2021-22",
+        "competition_id": "PRIMERA_DIVISION",
+        "matchday": "1",
+        "extraction_method": "connection_or_extraction_failed",
+        "raw_home_team": "",
+        "raw_away_team": "",
+        "raw_home_score": "",
+        "raw_away_score": "",
+        "raw_date": "",
+        "raw_time": "",
+        "raw_match_url": "",
+        "data_confidence": "failed",
+        "notes": f"Error: {type(e).__name__}: {e}",
+    })
+
+write_csv("raw_laliga_stage_4b_jornada_1.csv", raw_laliga_fields, raw_laliga_rows)
+
+print("Stage 4B LaLiga raw extraction inspection complete.")
