@@ -1871,3 +1871,138 @@ for matchday in range(1, 4):
 write_csv("stage_5a_primera_2021_22_j1_to_j3_raw.csv", stage_5a_raw_fields, stage_5a_raw_rows)
 
 print(f"Stage 5A extracted {len(stage_5a_raw_rows)} raw fixture rows.")
+# -----------------------------
+# Stage 5B: Convert Primera División 2021/22 matchdays 1-3 raw rows into app fixture rows
+# -----------------------------
+
+stage_5b_fields = [
+    "fixture_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_level",
+    "competition_group",
+    "matchday",
+    "round_label",
+    "fixture_date",
+    "kickoff_time_local",
+    "home_team_id",
+    "home_team_name_source",
+    "away_team_id",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "result_status",
+    "venue_id",
+    "venue_name_source",
+    "attendance",
+    "referee",
+    "match_report_url",
+    "rfef_acta_url",
+    "laliga_match_url",
+    "source_system",
+    "source_url",
+    "source_retrieved_at",
+    "data_confidence",
+    "notes",
+]
+
+stage_5b_rows = []
+
+try:
+    raw_file = EXPORT_DIR / "stage_5a_primera_2021_22_j1_to_j3_raw.csv"
+
+    with raw_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        raw_rows = list(reader)
+
+    for row in raw_rows:
+        if row.get("data_confidence") == "failed":
+            continue
+
+        home_name = row["home_team_name_source"]
+        away_name = row["away_team_name_source"]
+
+        home_team_id = make_team_id(home_name)
+        away_team_id = make_team_id(away_name)
+
+        fixture_id = make_fixture_id(
+            row["season_id"],
+            row["competition_id"],
+            row["matchday"],
+            home_team_id,
+            away_team_id,
+        )
+
+        stage_5b_rows.append({
+            "fixture_id": fixture_id,
+            "season_id": row["season_id"],
+            "competition_id": row["competition_id"],
+            "competition_name": row["competition_name"],
+            "competition_level": "1",
+            "competition_group": "",
+            "matchday": row["matchday"],
+            "round_label": f"Jornada {row['matchday']}",
+            "fixture_date": row["fixture_date"],
+            "kickoff_time_local": "",
+            "home_team_id": home_team_id,
+            "home_team_name_source": home_name,
+            "away_team_id": away_team_id,
+            "away_team_name_source": away_name,
+            "home_score": row["home_score"],
+            "away_score": row["away_score"],
+            "result_status": "played",
+            "venue_id": "",
+            "venue_name_source": "",
+            "attendance": "",
+            "referee": "",
+            "match_report_url": "",
+            "rfef_acta_url": "",
+            "laliga_match_url": "",
+            "source_system": "LaLiga",
+            "source_url": row["source_url"],
+            "source_retrieved_at": NOW,
+            "data_confidence": "high",
+            "notes": "Generated from Stage 5A Primera División 2021/22 matchdays 1-3 extraction.",
+        })
+
+except Exception as e:
+    stage_5b_rows.append({
+        "fixture_id": "",
+        "season_id": "2021-22",
+        "competition_id": "PRIMERA_DIVISION",
+        "competition_name": "Primera División",
+        "competition_level": "1",
+        "competition_group": "",
+        "matchday": "",
+        "round_label": "",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "home_team_id": "",
+        "home_team_name_source": "",
+        "away_team_id": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "result_status": "",
+        "venue_id": "",
+        "venue_name_source": "",
+        "attendance": "",
+        "referee": "",
+        "match_report_url": "",
+        "rfef_acta_url": "",
+        "laliga_match_url": "",
+        "source_system": "LaLiga",
+        "source_url": "",
+        "source_retrieved_at": NOW,
+        "data_confidence": "failed",
+        "notes": f"Stage 5B failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "fixtures_results_stage_5b_primera_2021_22_j1_to_j3.csv",
+    stage_5b_fields,
+    stage_5b_rows,
+)
+
+print(f"Stage 5B generated {len(stage_5b_rows)} app fixture rows.")
