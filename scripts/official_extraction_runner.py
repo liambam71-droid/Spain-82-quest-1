@@ -5080,3 +5080,492 @@ write_csv(
 )
 
 print("Stage 9A Segunda playoff jornada discovery complete.")
+# -----------------------------
+# Stage 9B: Multi-season LaLiga production runner
+# Primera División regular season + Segunda División regular season + Segunda playoffs
+# Seasons: 2021/22 to 2025/26
+# -----------------------------
+
+stage_9b_fixture_rows = []
+stage_9b_team_index_rows = []
+stage_9b_errors = []
+
+stage_9b_seasons = [
+    "2021-22",
+    "2022-23",
+    "2023-24",
+    "2024-25",
+    "2025-26",
+]
+
+stage_9b_competition_plan = [
+    {
+        "competition_id": "PRIMERA_DIVISION",
+        "competition_name": "Primera División",
+        "competition_level": "1",
+        "url_competition_slug": "laliga-easports",
+        "regular_matchdays": range(1, 39),
+        "playoff_matchdays": [],
+    },
+    {
+        "competition_id": "SEGUNDA_DIVISION",
+        "competition_name": "Segunda División",
+        "competition_level": "2",
+        "url_competition_slug": "laliga-hypermotion",
+        "regular_matchdays": range(1, 43),
+        "playoff_matchdays": range(43, 47),
+    },
+]
+
+stage_9b_playoff_round_labels = {
+    43: "Promotion playoff semi-final first leg",
+    44: "Promotion playoff semi-final second leg",
+    45: "Promotion playoff final first leg",
+    46: "Promotion playoff final second leg",
+}
+
+
+def stage_9b_extract_matchday(
+    season_id,
+    competition_id,
+    competition_name,
+    competition_level,
+    url_competition_slug,
+    matchday,
+    fixture_phase,
+):
+    source_url = f"https://www.laliga.com/{url_competition_slug}/resultados/{season_id}/jornada-{matchday}"
+    rows = []
+
+    try:
+        request = urllib.request.Request(
+            source_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            html = response.read().decode("utf-8", errors="ignore")
+
+        next_data_match = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+            html,
+            re.DOTALL
+        )
+
+        if not next_data_match:
+            stage_9b_errors.append({
+                "season_id": season_id,
+                "competition_id": competition_id,
+                "matchday": str(matchday),
+                "fixture_phase": fixture_phase,
+                "source_url": source_url,
+                "error_type": "failed_no_next_data",
+                "error_message": "No __NEXT_DATA__ JSON found.",
+            })
+            return rows
+
+        next_data = json.loads(next_data_match.group(1))
+        matches = next_data["props"]["pageProps"]["matches"]
+
+        for match in matches:
+            home_team = match.get("home_team", {})
+            away_team = match.get("away_team", {})
+
+            home_name = (
+                home_team.get("name")
+                or home_team.get("nickname")
+                or home_team.get("short_name")
+                or ""
+            )
+
+            away_name = (
+                away_team.get("name")
+                or away_team.get("nickname")
+                or away_team.get("short_name")
+                or ""
+            )
+
+            home_team_id = make_team_id(home_name)
+            away_team_id = make_team_id(away_name)
+
+            fixture_id = make_fixture_id(
+                season_id,
+                competition_id,
+                str(matchday),
+                home_team_id,
+                away_team_id,
+            )
+
+            if fixture_phase == "promotion_playoff":
+                round_label = stage_9b_playoff_round_labels.get(
+                    matchday,
+                    f"Promotion playoff jornada {matchday}",
+                )
+            else:
+                round_label = f"Jornada {matchday}"
+
+            rows.append({
+                "fixture_id": fixture_id,
+                "season_id": season_id,
+                "competition_id": competition_id,
+                "competition_name": competition_name,
+                "competition_level": competition_level,
+                "competition_group": "",
+                "fixture_phase": fixture_phase,
+                "matchday": str(matchday),
+                "round_label": round_label,
+                "fixture_date": match.get("date", ""),
+                "kickoff_time_local": "",
+                "home_team_id": home_team_id,
+                "home_team_name_source": home_name,
+                "away_team_id": away_team_id,
+                "away_team_name_source": away_name,
+                "home_score": match.get("home_score", ""),
+                "away_score": match.get("away_score", ""),
+                "result_status": "played",
+                "venue_id": "",
+                "venue_name_source": "",
+                "attendance": "",
+                "referee": "",
+                "match_report_url": "",
+                "rfef_acta_url": "",
+                "laliga_match_url": "",
+                "source_system": "LaLiga",
+                "source_url": source_url,
+                "source_retrieved_at": NOW,
+                "data_confidence": "high",
+                "notes": "Generated by Stage 9B multi-season LaLiga production runner.",
+            })
+
+    except Exception as e:
+        stage_9b_errors.append({
+            "season_id": season_id,
+            "competition_id": competition_id,
+            "matchday": str(matchday),
+            "fixture_phase": fixture_phase,
+            "source_url": source_url,
+            "error_type": type(e).__name__,
+            "error_message": str(e),
+        })
+
+    return rows
+
+
+# Extract all planned LaLiga fixtures
+for season_id in stage_9b_seasons:
+    for competition in stage_9b_competition_plan:
+
+        for matchday in competition["regular_matchdays"]:
+            stage_9b_fixture_rows.extend(
+                stage_9b_extract_matchday(
+                    season_id=season_id,
+                    competition_id=competition["competition_id"],
+                    competition_name=competition["competition_name"],
+                    competition_level=competition["competition_level"],
+                    url_competition_slug=competition["url_competition_slug"],
+                    matchday=matchday,
+                    fixture_phase="regular_season",
+                )
+            )
+
+        for matchday in competition["playoff_matchdays"]:
+            stage_9b_fixture_rows.extend(
+                stage_9b_extract_matchday(
+                    season_id=season_id,
+                    competition_id=competition["competition_id"],
+                    competition_name=competition["competition_name"],
+                    competition_level=competition["competition_level"],
+                    url_competition_slug=competition["url_competition_slug"],
+                    matchday=matchday,
+                    fixture_phase="promotion_playoff",
+                )
+            )
+
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_fixtures_results.csv",
+    stage_8a_fixture_fields,
+    stage_9b_fixture_rows,
+)
+
+
+# -----------------------------
+# Stage 9B: build combined region lookup
+# -----------------------------
+
+stage_9b_region_lookup = {}
+
+for region_map_filename in [
+    "team_region_map_stage_4g2_exact_laliga_ids.csv",
+    "team_region_map_stage_7d_segunda_exact_laliga_ids.csv",
+]:
+    region_map_file = EXPORT_DIR / region_map_filename
+
+    if region_map_file.exists():
+        with region_map_file.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                stage_9b_region_lookup[row["team_id"]] = row
+
+
+# -----------------------------
+# Stage 9B: build team fixture index
+# -----------------------------
+
+for fixture in stage_9b_fixture_rows:
+    fixture_id = fixture["fixture_id"]
+
+    home_team_id = fixture["home_team_id"]
+    away_team_id = fixture["away_team_id"]
+
+    home_score = fixture["home_score"]
+    away_score = fixture["away_score"]
+
+    home_region = stage_9b_region_lookup.get(home_team_id, {})
+    away_region = stage_9b_region_lookup.get(away_team_id, {})
+
+    stage_9b_team_index_rows.append({
+        "team_fixture_id": f"{fixture_id}__{home_team_id}",
+        "fixture_id": fixture_id,
+        "team_id": home_team_id,
+        "season_id": fixture["season_id"],
+        "competition_id": fixture["competition_id"],
+        "competition_name": fixture["competition_name"],
+        "competition_group": fixture["competition_group"],
+        "fixture_phase": fixture["fixture_phase"],
+        "matchday": fixture["matchday"],
+        "fixture_date": fixture["fixture_date"],
+        "opponent_team_id": away_team_id,
+        "home_or_away": "Home",
+        "team_score": home_score,
+        "opponent_score": away_score,
+        "result_for_team": result_for_team(home_score, away_score),
+        "venue_id": fixture["venue_id"],
+        "is_home_ground": "true",
+        "team_autonomous_region_id": home_region.get("autonomous_region_id", ""),
+        "team_autonomous_region_name": home_region.get("autonomous_region_name", ""),
+        "team_autonomous_region_slug": home_region.get("autonomous_region_slug", ""),
+        "opponent_autonomous_region_id": away_region.get("autonomous_region_id", ""),
+        "opponent_autonomous_region_name": away_region.get("autonomous_region_name", ""),
+        "opponent_autonomous_region_slug": away_region.get("autonomous_region_slug", ""),
+        "source_url": fixture["source_url"],
+    })
+
+    stage_9b_team_index_rows.append({
+        "team_fixture_id": f"{fixture_id}__{away_team_id}",
+        "fixture_id": fixture_id,
+        "team_id": away_team_id,
+        "season_id": fixture["season_id"],
+        "competition_id": fixture["competition_id"],
+        "competition_name": fixture["competition_name"],
+        "competition_group": fixture["competition_group"],
+        "fixture_phase": fixture["fixture_phase"],
+        "matchday": fixture["matchday"],
+        "fixture_date": fixture["fixture_date"],
+        "opponent_team_id": home_team_id,
+        "home_or_away": "Away",
+        "team_score": away_score,
+        "opponent_score": home_score,
+        "result_for_team": result_for_team(away_score, home_score),
+        "venue_id": fixture["venue_id"],
+        "is_home_ground": "false",
+        "team_autonomous_region_id": away_region.get("autonomous_region_id", ""),
+        "team_autonomous_region_name": away_region.get("autonomous_region_name", ""),
+        "team_autonomous_region_slug": away_region.get("autonomous_region_slug", ""),
+        "opponent_autonomous_region_id": home_region.get("autonomous_region_id", ""),
+        "opponent_autonomous_region_name": home_region.get("autonomous_region_name", ""),
+        "opponent_autonomous_region_slug": home_region.get("autonomous_region_slug", ""),
+        "source_url": fixture["source_url"],
+    })
+
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_team_fixture_index.csv",
+    stage_8a_team_index_fields,
+    stage_9b_team_index_rows,
+)
+
+
+# -----------------------------
+# Stage 9B: validation summary
+# -----------------------------
+
+stage_9b_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+fixture_ids = [
+    row["fixture_id"]
+    for row in stage_9b_fixture_rows
+    if row.get("fixture_id")
+]
+
+duplicate_fixture_ids = sorted([
+    fixture_id
+    for fixture_id in set(fixture_ids)
+    if fixture_ids.count(fixture_id) > 1
+])
+
+team_fixture_ids = [
+    row["team_fixture_id"]
+    for row in stage_9b_team_index_rows
+    if row.get("team_fixture_id")
+]
+
+duplicate_team_fixture_ids = sorted([
+    team_fixture_id
+    for team_fixture_id in set(team_fixture_ids)
+    if team_fixture_ids.count(team_fixture_id) > 1
+])
+
+missing_team_regions = [
+    row for row in stage_9b_team_index_rows
+    if not row.get("team_autonomous_region_id")
+]
+
+missing_opponent_regions = [
+    row for row in stage_9b_team_index_rows
+    if not row.get("opponent_autonomous_region_id")
+]
+
+teams_missing_regions = sorted(set(
+    row["team_id"]
+    for row in missing_team_regions
+    if row.get("team_id")
+))
+
+opponents_missing_regions = sorted(set(
+    row["opponent_team_id"]
+    for row in missing_opponent_regions
+    if row.get("opponent_team_id")
+))
+
+primera_regular_count = len([
+    row for row in stage_9b_fixture_rows
+    if row.get("competition_id") == "PRIMERA_DIVISION"
+    and row.get("fixture_phase") == "regular_season"
+])
+
+segunda_regular_count = len([
+    row for row in stage_9b_fixture_rows
+    if row.get("competition_id") == "SEGUNDA_DIVISION"
+    and row.get("fixture_phase") == "regular_season"
+])
+
+segunda_playoff_count = len([
+    row for row in stage_9b_fixture_rows
+    if row.get("competition_id") == "SEGUNDA_DIVISION"
+    and row.get("fixture_phase") == "promotion_playoff"
+])
+
+stage_9b_validation_rows = [
+    {
+        "check_name": "primera_regular_fixture_rows",
+        "result": str(primera_regular_count),
+        "details": "Expected 1900: 5 seasons x 380.",
+    },
+    {
+        "check_name": "segunda_regular_fixture_rows",
+        "result": str(segunda_regular_count),
+        "details": "Expected 2310: 5 seasons x 462.",
+    },
+    {
+        "check_name": "segunda_playoff_fixture_rows",
+        "result": str(segunda_playoff_count),
+        "details": "Expected 30: 5 seasons x 6.",
+    },
+    {
+        "check_name": "total_fixture_rows",
+        "result": str(len(stage_9b_fixture_rows)),
+        "details": "Expected 4240.",
+    },
+    {
+        "check_name": "total_team_fixture_index_rows",
+        "result": str(len(stage_9b_team_index_rows)),
+        "details": "Expected 8480.",
+    },
+    {
+        "check_name": "duplicate_fixture_ids",
+        "result": str(len(duplicate_fixture_ids)),
+        "details": "|".join(duplicate_fixture_ids),
+    },
+    {
+        "check_name": "duplicate_team_fixture_ids",
+        "result": str(len(duplicate_team_fixture_ids)),
+        "details": "|".join(duplicate_team_fixture_ids),
+    },
+    {
+        "check_name": "missing_team_region_tags",
+        "result": str(len(missing_team_regions)),
+        "details": "|".join(teams_missing_regions),
+    },
+    {
+        "check_name": "missing_opponent_region_tags",
+        "result": str(len(missing_opponent_regions)),
+        "details": "|".join(opponents_missing_regions),
+    },
+    {
+        "check_name": "extraction_errors",
+        "result": str(len(stage_9b_errors)),
+        "details": "See laliga_multiseason_2021_22_to_2025_26_errors.csv if greater than 0.",
+    },
+]
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_validation_summary.csv",
+    stage_9b_validation_fields,
+    stage_9b_validation_rows,
+)
+
+stage_9b_error_fields = [
+    "season_id",
+    "competition_id",
+    "matchday",
+    "fixture_phase",
+    "source_url",
+    "error_type",
+    "error_message",
+]
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_errors.csv",
+    stage_9b_error_fields,
+    stage_9b_errors,
+)
+
+# Unmapped teams output for region cleanup
+unmapped_team_fields = [
+    "team_id",
+    "occurrences_as_team",
+    "occurrences_as_opponent",
+]
+
+unmapped_team_rows = []
+
+for team_id in sorted(set(teams_missing_regions + opponents_missing_regions)):
+    unmapped_team_rows.append({
+        "team_id": team_id,
+        "occurrences_as_team": str(len([
+            row for row in missing_team_regions
+            if row.get("team_id") == team_id
+        ])),
+        "occurrences_as_opponent": str(len([
+            row for row in missing_opponent_regions
+            if row.get("opponent_team_id") == team_id
+        ])),
+    })
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_unmapped_region_teams.csv",
+    unmapped_team_fields,
+    unmapped_team_rows,
+)
+
+print(f"Stage 9B generated {len(stage_9b_fixture_rows)} fixture rows.")
+print(f"Stage 9B generated {len(stage_9b_team_index_rows)} team fixture index rows.")
+print(f"Stage 9B found {len(stage_9b_errors)} extraction errors.")
+print(f"Stage 9B found {len(unmapped_team_rows)} unmapped region teams.")
