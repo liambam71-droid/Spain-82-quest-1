@@ -4685,3 +4685,179 @@ write_csv(
 
 print(f"Stage 8D generated {len(stage_8d_fixture_rows)} Segunda playoff fixture rows.")
 print(f"Stage 8D generated {len(stage_8d_team_index_rows)} Segunda playoff team fixture index rows.")
+# -----------------------------
+# Stage 8E: Combine 2021/22 LaLiga regular + Segunda playoff outputs
+# -----------------------------
+
+stage_8e_fixture_rows = []
+stage_8e_team_index_rows = []
+
+try:
+    # Regular season fixtures: Primera + Segunda
+    regular_fixtures_file = EXPORT_DIR / "laliga_production_2021_22_regular_fixtures_results.csv"
+
+    with regular_fixtures_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        stage_8e_fixture_rows.extend(list(reader))
+
+    # Segunda playoff fixtures
+    playoff_fixtures_file = EXPORT_DIR / "segunda_2021_22_playoff_fixtures_results_stage_8d.csv"
+
+    with playoff_fixtures_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        stage_8e_fixture_rows.extend(list(reader))
+
+except Exception as e:
+    print(f"Stage 8E fixture combine failed: {type(e).__name__}: {e}")
+
+
+try:
+    # Regular season team fixture index: Primera + Segunda
+    regular_team_index_file = EXPORT_DIR / "laliga_production_2021_22_regular_team_fixture_index.csv"
+
+    with regular_team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        stage_8e_team_index_rows.extend(list(reader))
+
+    # Segunda playoff team fixture index
+    playoff_team_index_file = EXPORT_DIR / "segunda_2021_22_playoff_team_fixture_index_stage_8d.csv"
+
+    with playoff_team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        stage_8e_team_index_rows.extend(list(reader))
+
+except Exception as e:
+    print(f"Stage 8E team index combine failed: {type(e).__name__}: {e}")
+
+
+write_csv(
+    "laliga_2021_22_fixtures_results_complete.csv",
+    stage_8a_fixture_fields,
+    stage_8e_fixture_rows,
+)
+
+write_csv(
+    "laliga_2021_22_team_fixture_index_complete.csv",
+    stage_8a_team_index_fields,
+    stage_8e_team_index_rows,
+)
+
+
+# -----------------------------
+# Stage 8E validation summary
+# -----------------------------
+
+stage_8e_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+fixture_ids = [
+    row["fixture_id"]
+    for row in stage_8e_fixture_rows
+    if row.get("fixture_id")
+]
+
+duplicate_fixture_ids = sorted([
+    fixture_id
+    for fixture_id in set(fixture_ids)
+    if fixture_ids.count(fixture_id) > 1
+])
+
+team_fixture_ids = [
+    row["team_fixture_id"]
+    for row in stage_8e_team_index_rows
+    if row.get("team_fixture_id")
+]
+
+duplicate_team_fixture_ids = sorted([
+    team_fixture_id
+    for team_fixture_id in set(team_fixture_ids)
+    if team_fixture_ids.count(team_fixture_id) > 1
+])
+
+missing_team_regions = [
+    row for row in stage_8e_team_index_rows
+    if not row.get("team_autonomous_region_id")
+]
+
+missing_opponent_regions = [
+    row for row in stage_8e_team_index_rows
+    if not row.get("opponent_autonomous_region_id")
+]
+
+primera_regular_count = len([
+    row for row in stage_8e_fixture_rows
+    if row.get("competition_id") == "PRIMERA_DIVISION"
+    and row.get("fixture_phase") == "regular_season"
+])
+
+segunda_regular_count = len([
+    row for row in stage_8e_fixture_rows
+    if row.get("competition_id") == "SEGUNDA_DIVISION"
+    and row.get("fixture_phase") == "regular_season"
+])
+
+segunda_playoff_count = len([
+    row for row in stage_8e_fixture_rows
+    if row.get("competition_id") == "SEGUNDA_DIVISION"
+    and row.get("fixture_phase") == "promotion_playoff"
+])
+
+stage_8e_validation_rows = [
+    {
+        "check_name": "primera_regular_fixture_rows",
+        "result": str(primera_regular_count),
+        "details": "Expected 380.",
+    },
+    {
+        "check_name": "segunda_regular_fixture_rows",
+        "result": str(segunda_regular_count),
+        "details": "Expected 462.",
+    },
+    {
+        "check_name": "segunda_playoff_fixture_rows",
+        "result": str(segunda_playoff_count),
+        "details": "Expected 6.",
+    },
+    {
+        "check_name": "total_fixture_rows",
+        "result": str(len(stage_8e_fixture_rows)),
+        "details": "Expected 848.",
+    },
+    {
+        "check_name": "total_team_fixture_index_rows",
+        "result": str(len(stage_8e_team_index_rows)),
+        "details": "Expected 1696.",
+    },
+    {
+        "check_name": "duplicate_fixture_ids",
+        "result": str(len(duplicate_fixture_ids)),
+        "details": "|".join(duplicate_fixture_ids),
+    },
+    {
+        "check_name": "duplicate_team_fixture_ids",
+        "result": str(len(duplicate_team_fixture_ids)),
+        "details": "|".join(duplicate_team_fixture_ids),
+    },
+    {
+        "check_name": "missing_team_region_tags",
+        "result": str(len(missing_team_regions)),
+        "details": "|".join(sorted(set(row["team_id"] for row in missing_team_regions if row.get("team_id")))),
+    },
+    {
+        "check_name": "missing_opponent_region_tags",
+        "result": str(len(missing_opponent_regions)),
+        "details": "|".join(sorted(set(row["opponent_team_id"] for row in missing_opponent_regions if row.get("opponent_team_id")))),
+    },
+]
+
+write_csv(
+    "laliga_2021_22_complete_validation_summary.csv",
+    stage_8e_validation_fields,
+    stage_8e_validation_rows,
+)
+
+print(f"Stage 8E combined {len(stage_8e_fixture_rows)} fixture rows.")
+print(f"Stage 8E combined {len(stage_8e_team_index_rows)} team fixture index rows.")
