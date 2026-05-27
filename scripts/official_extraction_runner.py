@@ -5921,3 +5921,105 @@ write_csv(
 print(f"Stage 9C confirmed fixture rows: {len(stage_9c_confirmed_fixture_rows)}")
 print(f"Stage 9C confirmed team index rows: {len(stage_9c_confirmed_team_index_rows_with_regions)}")
 print(f"Stage 9C excluded unconfirmed fixture rows: {len(stage_9c_excluded_fixture_rows)}")
+# -----------------------------
+# Stage 9D: Create final audit note for clean LaLiga multi-season export
+# -----------------------------
+
+audit_note = f"""# LaLiga Multi-Season Fixture Export Audit Note
+
+Generated at: {NOW}
+
+## Scope
+
+This export covers official LaLiga source extraction for:
+
+- Primera División regular season fixtures
+- Segunda División regular season fixtures
+- Segunda División promotion playoff fixtures where confirmed
+
+Seasons covered:
+
+- 2021/22
+- 2022/23
+- 2023/24
+- 2024/25
+- 2025/26
+
+## Final clean app-ready outputs
+
+The app-ready files are:
+
+- `laliga_multiseason_2021_22_to_2025_26_confirmed_fixtures_results_clean.csv`
+- `laliga_multiseason_2021_22_to_2025_26_confirmed_team_fixture_index_clean.csv`
+
+These files exclude unconfirmed placeholder fixtures.
+
+## Confirmed clean dataset totals
+
+- Primera División regular fixtures: 1,900
+- Segunda División regular fixtures: 2,310
+- Confirmed Segunda División playoff fixtures: 24
+- Total confirmed fixture rows: 4,234
+- Total confirmed team fixture index rows: 8,468
+
+## Excluded unconfirmed fixtures
+
+The following file records excluded placeholder rows:
+
+- `laliga_multiseason_2021_22_to_2025_26_excluded_unconfirmed_fixtures.csv`
+
+Six rows were excluded because they are unresolved 2025/26 Segunda División promotion playoff placeholders.
+
+Those rows use:
+
+- `home_team_id = POR_DETERMINAR`
+- `away_team_id = POR_DETERMINAR`
+
+They relate to:
+
+- 2025/26 Jornada 43: playoff semi-final first legs
+- 2025/26 Jornada 44: playoff semi-final second legs
+- 2025/26 Jornada 45: playoff final first leg
+- 2025/26 Jornada 46: playoff final second leg
+
+## Validation status
+
+The clean export passed the key validation checks:
+
+- Duplicate fixture IDs: 0
+- Duplicate team fixture IDs: 0
+- Missing team region tags: 0
+- Missing opponent region tags: 0
+
+## Regional challenge tagging
+
+The clean team fixture index includes autonomous-region tags for both the selected team and the opponent team.
+
+Regional challenge logic should use the stable ID fields rather than display names:
+
+- `team_autonomous_region_id`
+- `opponent_autonomous_region_id`
+
+For example:
+
+- Catalonia / Catalunya / Cataluña should map to `CT`
+- Andalusia / Andalucía / Andalucia should map to `AN`
+- Madrid / Community of Madrid / Comunidad de Madrid should map to `MD`
+
+## Future action required
+
+The 2025/26 Segunda División promotion playoff fixtures should be re-run once LaLiga has confirmed the teams and results.
+
+At that point, the six excluded `POR_DETERMINAR` placeholder rows should be replaced with confirmed fixture rows.
+
+## Current status
+
+This dataset is suitable for app testing and import for all confirmed LaLiga fixtures in scope.
+
+It is not yet the full Spanish football database because Primera Federación Group 1 and Group 2 still need to be handled through the RFEF source route.
+"""
+
+audit_note_path = EXPORT_DIR / "laliga_multiseason_2021_22_to_2025_26_audit_note.md"
+audit_note_path.write_text(audit_note, encoding="utf-8")
+
+print("Stage 9D audit note created.")
