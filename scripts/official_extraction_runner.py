@@ -4861,3 +4861,222 @@ write_csv(
 
 print(f"Stage 8E combined {len(stage_8e_fixture_rows)} fixture rows.")
 print(f"Stage 8E combined {len(stage_8e_team_index_rows)} team fixture index rows.")
+# -----------------------------
+# Stage 9A: Discover Segunda playoff jornada numbers for all target seasons
+# -----------------------------
+
+stage_9a_fields = [
+    "season_id",
+    "candidate_jornada",
+    "candidate_url",
+    "http_status",
+    "success",
+    "next_data_found",
+    "matches_found",
+    "match_count",
+    "sample_home_team",
+    "sample_away_team",
+    "sample_home_score",
+    "sample_away_score",
+    "likely_playoff_round",
+    "notes",
+]
+
+stage_9a_rows = []
+
+target_seasons = [
+    "2021-22",
+    "2022-23",
+    "2023-24",
+    "2024-25",
+    "2025-26",
+]
+
+for season_id in target_seasons:
+    for jornada in range(43, 49):
+        candidate_url = f"https://www.laliga.com/laliga-hypermotion/resultados/{season_id}/jornada-{jornada}"
+
+        try:
+            request = urllib.request.Request(
+                candidate_url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+                }
+            )
+
+            with urllib.request.urlopen(request, timeout=30) as response:
+                status_code = response.getcode()
+                html = response.read().decode("utf-8", errors="ignore")
+
+            next_data_match = re.search(
+                r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+                html,
+                re.DOTALL
+            )
+
+            next_data_found = bool(next_data_match)
+            matches_found = False
+            match_count = 0
+            sample_home_team = ""
+            sample_away_team = ""
+            sample_home_score = ""
+            sample_away_score = ""
+            likely_playoff_round = ""
+            notes = ""
+
+            if next_data_match:
+                try:
+                    next_data = json.loads(next_data_match.group(1))
+                    matches = next_data.get("props", {}).get("pageProps", {}).get("matches", [])
+
+                    if isinstance(matches, list) and matches:
+                        matches_found = True
+                        match_count = len(matches)
+
+                        sample_match = matches[0]
+                        sample_home = sample_match.get("home_team", {})
+                        sample_away = sample_match.get("away_team", {})
+
+                        sample_home_team = (
+                            sample_home.get("name")
+                            or sample_home.get("nickname")
+                            or sample_home.get("short_name")
+                            or ""
+                        )
+
+                        sample_away_team = (
+                            sample_away.get("name")
+                            or sample_away.get("nickname")
+                            or sample_away.get("short_name")
+                            or ""
+                        )
+
+                        sample_home_score = str(sample_match.get("home_score", ""))
+                        sample_away_score = str(sample_match.get("away_score", ""))
+
+                        if jornada == 43:
+                            likely_playoff_round = "Promotion playoff semi-final first leg"
+                        elif jornada == 44:
+                            likely_playoff_round = "Promotion playoff semi-final second leg"
+                        elif jornada == 45:
+                            likely_playoff_round = "Promotion playoff final first leg"
+                        elif jornada == 46:
+                            likely_playoff_round = "Promotion playoff final second leg"
+                        else:
+                            likely_playoff_round = "Unexpected extra playoff jornada"
+
+                    else:
+                        notes = "NEXT_DATA found, but props.pageProps.matches was empty or missing."
+
+                except Exception as e:
+                    notes = f"NEXT_DATA found, but JSON parse or match inspection failed: {type(e).__name__}: {e}"
+
+            else:
+                notes = "No __NEXT_DATA__ JSON found."
+
+            stage_9a_rows.append({
+                "season_id": season_id,
+                "candidate_jornada": str(jornada),
+                "candidate_url": candidate_url,
+                "http_status": str(status_code),
+                "success": str(status_code == 200).lower(),
+                "next_data_found": str(next_data_found).lower(),
+                "matches_found": str(matches_found).lower(),
+                "match_count": str(match_count),
+                "sample_home_team": sample_home_team,
+                "sample_away_team": sample_away_team,
+                "sample_home_score": sample_home_score,
+                "sample_away_score": sample_away_score,
+                "likely_playoff_round": likely_playoff_round,
+                "notes": notes,
+            })
+
+        except urllib.error.HTTPError as e:
+            stage_9a_rows.append({
+                "season_id": season_id,
+                "candidate_jornada": str(jornada),
+                "candidate_url": candidate_url,
+                "http_status": str(e.code),
+                "success": "false",
+                "next_data_found": "false",
+                "matches_found": "false",
+                "match_count": "0",
+                "sample_home_team": "",
+                "sample_away_team": "",
+                "sample_home_score": "",
+                "sample_away_score": "",
+                "likely_playoff_round": "",
+                "notes": f"HTTPError: {e.reason}",
+            })
+
+        except Exception as e:
+            stage_9a_rows.append({
+                "season_id": season_id,
+                "candidate_jornada": str(jornada),
+                "candidate_url": candidate_url,
+                "http_status": "",
+                "success": "false",
+                "next_data_found": "false",
+                "matches_found": "false",
+                "match_count": "0",
+                "sample_home_team": "",
+                "sample_away_team": "",
+                "sample_home_score": "",
+                "sample_away_score": "",
+                "likely_playoff_round": "",
+                "notes": f"Error: {type(e).__name__}: {e}",
+            })
+
+write_csv(
+    "stage_9a_segunda_playoff_jornada_discovery_all_seasons.csv",
+    stage_9a_fields,
+    stage_9a_rows,
+)
+
+# -----------------------------
+# Stage 9A validation summary
+# -----------------------------
+
+stage_9a_validation_fields = [
+    "season_id",
+    "playoff_jornadas_found",
+    "total_playoff_matches_found",
+    "jornada_match_counts",
+    "notes",
+]
+
+stage_9a_validation_rows = []
+
+for season_id in target_seasons:
+    season_rows = [
+        row for row in stage_9a_rows
+        if row["season_id"] == season_id
+        and row["matches_found"] == "true"
+    ]
+
+    jornada_match_counts = "|".join([
+        f"J{row['candidate_jornada']}={row['match_count']}"
+        for row in season_rows
+    ])
+
+    total_matches = sum(
+        int(row["match_count"])
+        for row in season_rows
+        if row["match_count"].isdigit()
+    )
+
+    stage_9a_validation_rows.append({
+        "season_id": season_id,
+        "playoff_jornadas_found": str(len(season_rows)),
+        "total_playoff_matches_found": str(total_matches),
+        "jornada_match_counts": jornada_match_counts,
+        "notes": "Expected usually 4 playoff jornadas and 6 playoff matches.",
+    })
+
+write_csv(
+    "stage_9a_segunda_playoff_jornada_discovery_validation.csv",
+    stage_9a_validation_fields,
+    stage_9a_validation_rows,
+)
+
+print("Stage 9A Segunda playoff jornada discovery complete.")
