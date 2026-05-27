@@ -3330,3 +3330,260 @@ write_csv(
 )
 
 print(f"Stage 7C generated {len(stage_7c_rows)} Segunda team fixture index rows.")
+# -----------------------------
+# Stage 7D: Add autonomous region tags to Segunda División 2021/22 matchdays 1-3 team fixture index
+# -----------------------------
+
+stage_7d_region_map_fields = [
+    "team_id",
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+]
+
+stage_7d_region_map_rows = [
+    {
+        "team_id": "AGRUPACION_DEPORTIVA_ALCORCON_SAD",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "BURGOS_CF",
+        "autonomous_region_id": "CL",
+        "autonomous_region_name": "Castile and León",
+        "autonomous_region_slug": "castile-and-leon",
+    },
+    {
+        "team_id": "CF_FUENLABRADA",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "CLUB_DEPORTIVO_LEGANES_SAD",
+        "autonomous_region_id": "MD",
+        "autonomous_region_name": "Community of Madrid",
+        "autonomous_region_slug": "community-of-madrid",
+    },
+    {
+        "team_id": "CLUB_DEPORTIVO_LUGO_SAD",
+        "autonomous_region_id": "GA",
+        "autonomous_region_name": "Galicia",
+        "autonomous_region_slug": "galicia",
+    },
+    {
+        "team_id": "CLUB_DEPORTIVO_MIRANDES_SAD",
+        "autonomous_region_id": "CL",
+        "autonomous_region_name": "Castile and León",
+        "autonomous_region_slug": "castile-and-leon",
+    },
+    {
+        "team_id": "CLUB_DEPORTIVO_TENERIFE_SAD",
+        "autonomous_region_id": "CN",
+        "autonomous_region_name": "Canary Islands",
+        "autonomous_region_slug": "canary-islands",
+    },
+    {
+        "team_id": "FC_CARTAGENA",
+        "autonomous_region_id": "MU",
+        "autonomous_region_name": "Region of Murcia",
+        "autonomous_region_slug": "region-of-murcia",
+    },
+    {
+        "team_id": "GIRONA_FUTBOL_CLUB_SAD",
+        "autonomous_region_id": "CT",
+        "autonomous_region_name": "Catalonia",
+        "autonomous_region_slug": "catalonia",
+    },
+    {
+        "team_id": "MALAGA_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+    },
+    {
+        "team_id": "REAL_OVIEDO_SAD",
+        "autonomous_region_id": "AS",
+        "autonomous_region_name": "Asturias",
+        "autonomous_region_slug": "asturias",
+    },
+    {
+        "team_id": "REAL_SPORTING_DE_GIJON_SAD",
+        "autonomous_region_id": "AS",
+        "autonomous_region_name": "Asturias",
+        "autonomous_region_slug": "asturias",
+    },
+    {
+        "team_id": "REAL_VALLADOLID_CLUB_DE_FUTBOL_SAD",
+        "autonomous_region_id": "CL",
+        "autonomous_region_name": "Castile and León",
+        "autonomous_region_slug": "castile-and-leon",
+    },
+    {
+        "team_id": "REAL_ZARAGOZA_SAD",
+        "autonomous_region_id": "AR",
+        "autonomous_region_name": "Aragon",
+        "autonomous_region_slug": "aragon",
+    },
+    {
+        "team_id": "R_SOCIEDAD_B",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+    },
+    {
+        "team_id": "SD_AMOREBIETA",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+    },
+    {
+        "team_id": "SOCIEDAD_DEPORTIVA_EIBAR_SAD",
+        "autonomous_region_id": "PV",
+        "autonomous_region_name": "Basque Country",
+        "autonomous_region_slug": "basque-country",
+    },
+    {
+        "team_id": "SOCIEDAD_DEPORTIVA_HUESCA_SAD",
+        "autonomous_region_id": "AR",
+        "autonomous_region_name": "Aragon",
+        "autonomous_region_slug": "aragon",
+    },
+    {
+        "team_id": "SOCIEDAD_DEPORTIVA_PONFERRADINA_SAD",
+        "autonomous_region_id": "CL",
+        "autonomous_region_name": "Castile and León",
+        "autonomous_region_slug": "castile-and-leon",
+    },
+    {
+        "team_id": "UD_IBIZA",
+        "autonomous_region_id": "IB",
+        "autonomous_region_name": "Balearic Islands",
+        "autonomous_region_slug": "balearic-islands",
+    },
+    {
+        "team_id": "UNION_DEPORTIVA_ALMERIA_SAD",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+    },
+    {
+        "team_id": "UNION_DEPORTIVA_LAS_PALMAS_SAD",
+        "autonomous_region_id": "CN",
+        "autonomous_region_name": "Canary Islands",
+        "autonomous_region_slug": "canary-islands",
+    },
+]
+
+write_csv(
+    "team_region_map_stage_7d_segunda_exact_laliga_ids.csv",
+    stage_7d_region_map_fields,
+    stage_7d_region_map_rows,
+)
+
+region_lookup_7d = {
+    row["team_id"]: row
+    for row in stage_7d_region_map_rows
+}
+
+stage_7d_rows = []
+
+try:
+    team_index_file = EXPORT_DIR / "team_fixture_index_stage_7c_segunda_2021_22_j1_to_j3.csv"
+
+    with team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        team_index_rows = list(reader)
+
+    for row in team_index_rows:
+        team_region = region_lookup_7d.get(row["team_id"], {})
+        opponent_region = region_lookup_7d.get(row["opponent_team_id"], {})
+
+        row["team_autonomous_region_id"] = team_region.get("autonomous_region_id", "")
+        row["team_autonomous_region_name"] = team_region.get("autonomous_region_name", "")
+        row["team_autonomous_region_slug"] = team_region.get("autonomous_region_slug", "")
+
+        row["opponent_autonomous_region_id"] = opponent_region.get("autonomous_region_id", "")
+        row["opponent_autonomous_region_name"] = opponent_region.get("autonomous_region_name", "")
+        row["opponent_autonomous_region_slug"] = opponent_region.get("autonomous_region_slug", "")
+
+        stage_7d_rows.append(row)
+
+except Exception as e:
+    print(f"Stage 7D failed: {type(e).__name__}: {e}")
+
+write_csv(
+    "team_fixture_index_stage_7d_segunda_2021_22_j1_to_j3_with_regions.csv",
+    stage_7c_fields,
+    stage_7d_rows,
+)
+
+# -----------------------------
+# Stage 7D validation summary
+# -----------------------------
+
+stage_7d_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+missing_team_regions = [
+    row for row in stage_7d_rows
+    if not row.get("team_autonomous_region_id")
+]
+
+missing_opponent_regions = [
+    row for row in stage_7d_rows
+    if not row.get("opponent_autonomous_region_id")
+]
+
+unique_regions = sorted(set(
+    row["team_autonomous_region_name"]
+    for row in stage_7d_rows
+    if row.get("team_autonomous_region_name")
+))
+
+teams_missing_regions = sorted(set(
+    row["team_id"]
+    for row in missing_team_regions
+    if row.get("team_id")
+))
+
+opponents_missing_regions = sorted(set(
+    row["opponent_team_id"]
+    for row in missing_opponent_regions
+    if row.get("opponent_team_id")
+))
+
+stage_7d_validation_rows = [
+    {
+        "check_name": "team_fixture_index_rows",
+        "result": str(len(stage_7d_rows)),
+        "details": "Expected 66 rows.",
+    },
+    {
+        "check_name": "missing_team_region_tags",
+        "result": str(len(missing_team_regions)),
+        "details": "|".join(teams_missing_regions),
+    },
+    {
+        "check_name": "missing_opponent_region_tags",
+        "result": str(len(missing_opponent_regions)),
+        "details": "|".join(opponents_missing_regions),
+    },
+    {
+        "check_name": "unique_regions_in_segunda_sample",
+        "result": str(len(unique_regions)),
+        "details": "|".join(unique_regions),
+    },
+]
+
+write_csv(
+    "stage_7d_segunda_region_validation_summary.csv",
+    stage_7d_validation_fields,
+    stage_7d_validation_rows,
+)
+
+print(f"Stage 7D generated {len(stage_7d_rows)} Segunda team fixture rows with autonomous region tags.")
