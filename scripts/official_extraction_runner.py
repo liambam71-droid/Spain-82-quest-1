@@ -2717,3 +2717,119 @@ write_csv(
 )
 
 print(f"Stage 6C generated {len(stage_6c_rows)} full team fixture index rows.")
+# -----------------------------
+# Stage 6D: Add autonomous region tags to full Primera División 2021/22 team fixture index
+# -----------------------------
+
+stage_6d_rows = []
+
+try:
+    # Use the corrected exact LaLiga team ID region map from Stage 4G2
+    region_map_file = EXPORT_DIR / "team_region_map_stage_4g2_exact_laliga_ids.csv"
+
+    with region_map_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        region_map_rows = list(reader)
+
+    region_lookup = {
+        row["team_id"]: row
+        for row in region_map_rows
+    }
+
+    team_index_file = EXPORT_DIR / "team_fixture_index_stage_6c_primera_2021_22_full.csv"
+
+    with team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        team_index_rows = list(reader)
+
+    for row in team_index_rows:
+        team_region = region_lookup.get(row["team_id"], {})
+        opponent_region = region_lookup.get(row["opponent_team_id"], {})
+
+        row["team_autonomous_region_id"] = team_region.get("autonomous_region_id", "")
+        row["team_autonomous_region_name"] = team_region.get("autonomous_region_name", "")
+        row["team_autonomous_region_slug"] = team_region.get("autonomous_region_slug", "")
+
+        row["opponent_autonomous_region_id"] = opponent_region.get("autonomous_region_id", "")
+        row["opponent_autonomous_region_name"] = opponent_region.get("autonomous_region_name", "")
+        row["opponent_autonomous_region_slug"] = opponent_region.get("autonomous_region_slug", "")
+
+        stage_6d_rows.append(row)
+
+except Exception as e:
+    print(f"Stage 6D failed: {type(e).__name__}: {e}")
+
+write_csv(
+    "team_fixture_index_stage_6d_primera_2021_22_full_with_regions.csv",
+    stage_6c_fields,
+    stage_6d_rows,
+)
+
+# -----------------------------
+# Stage 6D validation summary
+# -----------------------------
+
+stage_6d_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+missing_team_regions = [
+    row for row in stage_6d_rows
+    if not row.get("team_autonomous_region_id")
+]
+
+missing_opponent_regions = [
+    row for row in stage_6d_rows
+    if not row.get("opponent_autonomous_region_id")
+]
+
+unique_regions = sorted(set(
+    row["team_autonomous_region_name"]
+    for row in stage_6d_rows
+    if row.get("team_autonomous_region_name")
+))
+
+teams_missing_regions = sorted(set(
+    row["team_id"]
+    for row in missing_team_regions
+    if row.get("team_id")
+))
+
+opponents_missing_regions = sorted(set(
+    row["opponent_team_id"]
+    for row in missing_opponent_regions
+    if row.get("opponent_team_id")
+))
+
+stage_6d_validation_rows = [
+    {
+        "check_name": "team_fixture_index_rows",
+        "result": str(len(stage_6d_rows)),
+        "details": "Expected 760 rows.",
+    },
+    {
+        "check_name": "missing_team_region_tags",
+        "result": str(len(missing_team_regions)),
+        "details": "|".join(teams_missing_regions),
+    },
+    {
+        "check_name": "missing_opponent_region_tags",
+        "result": str(len(missing_opponent_regions)),
+        "details": "|".join(opponents_missing_regions),
+    },
+    {
+        "check_name": "unique_regions_in_full_2021_22_primera",
+        "result": str(len(unique_regions)),
+        "details": "|".join(unique_regions),
+    },
+]
+
+write_csv(
+    "stage_6d_region_validation_summary.csv",
+    stage_6d_validation_fields,
+    stage_6d_validation_rows,
+)
+
+print(f"Stage 6D generated {len(stage_6d_rows)} full team fixture rows with autonomous region tags.")
