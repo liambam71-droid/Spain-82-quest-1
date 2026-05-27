@@ -6256,3 +6256,134 @@ write_csv(
 )
 
 print("Stage 10A RFEF Primera Federación source discovery complete.")
+# -----------------------------
+# Stage 10C: Test direct RFEF parameterised calendar/jornada links
+# -----------------------------
+
+stage_10c_fields = [
+    "test_name",
+    "test_url",
+    "http_status",
+    "success",
+    "html_length",
+    "contains_primera_federacion",
+    "contains_grupo",
+    "contains_jornada",
+    "contains_fecha",
+    "contains_resultado",
+    "contains_local",
+    "contains_visitante",
+    "contains_acta",
+    "contains_calendario",
+    "sample_text",
+    "notes",
+]
+
+stage_10c_rows = []
+
+rfef_direct_link_tests = [
+    {
+        "test_name": "RFEF Primera Federación calendar example",
+        "test_url": "https://resultados.rfef.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1000120&codtemporada=20&codcompeticion=901769680&codgrupo=901769681",
+    },
+    {
+        "test_name": "RFEF Primera Federación jornada example blank jornada",
+        "test_url": "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada?cod_primaria=1000120&CodCompeticion=901769680&CodGrupo=901769681&CodTemporada=20&CodJornada=",
+    },
+    {
+        "test_name": "RFEF Primera Federación jornada 1 example",
+        "test_url": "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada?cod_primaria=1000120&CodCompeticion=901769680&CodGrupo=901769681&CodTemporada=20&CodJornada=1",
+    },
+]
+
+for test in rfef_direct_link_tests:
+    test_name = test["test_name"]
+    test_url = test["test_url"]
+
+    try:
+        request = urllib.request.Request(
+            test_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            status_code = response.getcode()
+            html = response.read().decode("utf-8", errors="ignore")
+
+        html_lower = html.lower()
+
+        safe_name = re.sub(r"[^A-Za-z0-9]+", "_", test_name).strip("_").lower()
+        sample_path = EXPORT_DIR / f"stage_10c_{safe_name}.html"
+        sample_path.write_text(html[:50000], encoding="utf-8")
+
+        sample_text = re.sub(r"<[^>]+>", " ", html[:2500])
+        sample_text = re.sub(r"\s+", " ", sample_text).strip()
+
+        stage_10c_rows.append({
+            "test_name": test_name,
+            "test_url": test_url,
+            "http_status": str(status_code),
+            "success": str(status_code == 200).lower(),
+            "html_length": str(len(html)),
+            "contains_primera_federacion": str("primera federación" in html_lower or "primera federacion" in html_lower).lower(),
+            "contains_grupo": str("grupo" in html_lower).lower(),
+            "contains_jornada": str("jornada" in html_lower).lower(),
+            "contains_fecha": str("fecha" in html_lower).lower(),
+            "contains_resultado": str("resultado" in html_lower or "resultados" in html_lower).lower(),
+            "contains_local": str("local" in html_lower).lower(),
+            "contains_visitante": str("visitante" in html_lower).lower(),
+            "contains_acta": str("acta" in html_lower or "actas" in html_lower).lower(),
+            "contains_calendario": str("calendario" in html_lower).lower(),
+            "sample_text": sample_text,
+            "notes": "Raw RFEF HTML sample saved for inspection.",
+        })
+
+    except urllib.error.HTTPError as e:
+        stage_10c_rows.append({
+            "test_name": test_name,
+            "test_url": test_url,
+            "http_status": str(e.code),
+            "success": "false",
+            "html_length": "0",
+            "contains_primera_federacion": "false",
+            "contains_grupo": "false",
+            "contains_jornada": "false",
+            "contains_fecha": "false",
+            "contains_resultado": "false",
+            "contains_local": "false",
+            "contains_visitante": "false",
+            "contains_acta": "false",
+            "contains_calendario": "false",
+            "sample_text": "",
+            "notes": f"HTTPError: {e.reason}",
+        })
+
+    except Exception as e:
+        stage_10c_rows.append({
+            "test_name": test_name,
+            "test_url": test_url,
+            "http_status": "",
+            "success": "false",
+            "html_length": "0",
+            "contains_primera_federacion": "false",
+            "contains_grupo": "false",
+            "contains_jornada": "false",
+            "contains_fecha": "false",
+            "contains_resultado": "false",
+            "contains_local": "false",
+            "contains_visitante": "false",
+            "contains_acta": "false",
+            "contains_calendario": "false",
+            "sample_text": "",
+            "notes": f"Error: {type(e).__name__}: {e}",
+        })
+
+write_csv(
+    "stage_10c_rfef_direct_link_tests.csv",
+    stage_10c_fields,
+    stage_10c_rows,
+)
+
+print("Stage 10C RFEF direct link tests complete.")
