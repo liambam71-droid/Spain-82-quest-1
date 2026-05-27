@@ -3177,3 +3177,156 @@ write_csv(
 )
 
 print(f"Stage 7B generated {len(stage_7b_rows)} Segunda app fixture rows.")
+# -----------------------------
+# Stage 7C: Build team fixture index for Segunda División 2021/22 matchdays 1-3
+# -----------------------------
+
+stage_7c_fields = [
+    "team_fixture_id",
+    "fixture_id",
+    "team_id",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "matchday",
+    "fixture_date",
+    "opponent_team_id",
+    "home_or_away",
+    "team_score",
+    "opponent_score",
+    "result_for_team",
+    "venue_id",
+    "is_home_ground",
+    "team_autonomous_region_id",
+    "team_autonomous_region_name",
+    "team_autonomous_region_slug",
+    "opponent_autonomous_region_id",
+    "opponent_autonomous_region_name",
+    "opponent_autonomous_region_slug",
+    "source_url",
+]
+
+stage_7c_rows = []
+
+try:
+    fixtures_file = EXPORT_DIR / "fixtures_results_stage_7b_segunda_2021_22_j1_to_j3.csv"
+
+    with fixtures_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        fixtures = list(reader)
+
+    for fixture in fixtures:
+        fixture_id = fixture["fixture_id"]
+
+        home_team_id = fixture["home_team_id"]
+        away_team_id = fixture["away_team_id"]
+
+        home_score = fixture["home_score"]
+        away_score = fixture["away_score"]
+
+        # Home team row
+        stage_7c_rows.append({
+            "team_fixture_id": f"{fixture_id}__{home_team_id}",
+            "fixture_id": fixture_id,
+            "team_id": home_team_id,
+            "season_id": fixture["season_id"],
+            "competition_id": fixture["competition_id"],
+            "competition_name": fixture["competition_name"],
+            "competition_group": fixture["competition_group"],
+            "matchday": fixture["matchday"],
+            "fixture_date": fixture["fixture_date"],
+            "opponent_team_id": away_team_id,
+            "home_or_away": "Home",
+            "team_score": home_score,
+            "opponent_score": away_score,
+            "result_for_team": result_for_team(home_score, away_score),
+            "venue_id": fixture["venue_id"],
+            "is_home_ground": "true",
+            "team_autonomous_region_id": "",
+            "team_autonomous_region_name": "",
+            "team_autonomous_region_slug": "",
+            "opponent_autonomous_region_id": "",
+            "opponent_autonomous_region_name": "",
+            "opponent_autonomous_region_slug": "",
+            "source_url": fixture["source_url"],
+        })
+
+        # Away team row
+        stage_7c_rows.append({
+            "team_fixture_id": f"{fixture_id}__{away_team_id}",
+            "fixture_id": fixture_id,
+            "team_id": away_team_id,
+            "season_id": fixture["season_id"],
+            "competition_id": fixture["competition_id"],
+            "competition_name": fixture["competition_name"],
+            "competition_group": fixture["competition_group"],
+            "matchday": fixture["matchday"],
+            "fixture_date": fixture["fixture_date"],
+            "opponent_team_id": home_team_id,
+            "home_or_away": "Away",
+            "team_score": away_score,
+            "opponent_score": home_score,
+            "result_for_team": result_for_team(away_score, home_score),
+            "venue_id": fixture["venue_id"],
+            "is_home_ground": "false",
+            "team_autonomous_region_id": "",
+            "team_autonomous_region_name": "",
+            "team_autonomous_region_slug": "",
+            "opponent_autonomous_region_id": "",
+            "opponent_autonomous_region_name": "",
+            "opponent_autonomous_region_slug": "",
+            "source_url": fixture["source_url"],
+        })
+
+except Exception as e:
+    print(f"Stage 7C failed: {type(e).__name__}: {e}")
+
+write_csv(
+    "team_fixture_index_stage_7c_segunda_2021_22_j1_to_j3.csv",
+    stage_7c_fields,
+    stage_7c_rows,
+)
+
+# -----------------------------
+# Stage 7C validation summary
+# -----------------------------
+
+stage_7c_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+team_fixture_ids = [
+    row["team_fixture_id"]
+    for row in stage_7c_rows
+    if row.get("team_fixture_id")
+]
+
+duplicate_team_fixture_ids = sorted([
+    team_fixture_id
+    for team_fixture_id in set(team_fixture_ids)
+    if team_fixture_ids.count(team_fixture_id) > 1
+])
+
+stage_7c_validation_rows = [
+    {
+        "check_name": "team_fixture_index_rows",
+        "result": str(len(stage_7c_rows)),
+        "details": "Expected 66 rows for 33 fixtures.",
+    },
+    {
+        "check_name": "duplicate_team_fixture_ids",
+        "result": str(len(duplicate_team_fixture_ids)),
+        "details": "|".join(duplicate_team_fixture_ids),
+    },
+]
+
+write_csv(
+    "stage_7c_segunda_2021_22_validation_summary.csv",
+    stage_7c_validation_fields,
+    stage_7c_validation_rows,
+)
+
+print(f"Stage 7C generated {len(stage_7c_rows)} Segunda team fixture index rows.")
