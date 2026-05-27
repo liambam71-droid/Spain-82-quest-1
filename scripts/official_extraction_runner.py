@@ -5569,3 +5569,355 @@ print(f"Stage 9B generated {len(stage_9b_fixture_rows)} fixture rows.")
 print(f"Stage 9B generated {len(stage_9b_team_index_rows)} team fixture index rows.")
 print(f"Stage 9B found {len(stage_9b_errors)} extraction errors.")
 print(f"Stage 9B found {len(unmapped_team_rows)} unmapped region teams.")
+# -----------------------------
+# Stage 9C: Clean multi-season LaLiga output
+# - Add missing region tags
+# - Exclude unresolved POR_DETERMINAR fixtures from confirmed app-ready export
+# -----------------------------
+
+stage_9c_region_patch_fields = [
+    "team_id",
+    "autonomous_region_id",
+    "autonomous_region_name",
+    "autonomous_region_slug",
+    "notes",
+]
+
+stage_9c_region_patch_rows = [
+    {
+        "team_id": "AD_CEUTA_FC",
+        "autonomous_region_id": "CE",
+        "autonomous_region_name": "Ceuta",
+        "autonomous_region_slug": "ceuta",
+        "notes": "",
+    },
+    {
+        "team_id": "ALBACETE_BALOMPIE_SAD",
+        "autonomous_region_id": "CM",
+        "autonomous_region_name": "Castilla-La Mancha",
+        "autonomous_region_slug": "castilla-la-mancha",
+        "notes": "",
+    },
+    {
+        "team_id": "CD_CASTELLON",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "notes": "",
+    },
+    {
+        "team_id": "CLUB_DEPORTIVO_ELDENSE",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "notes": "",
+    },
+    {
+        "team_id": "CORDOBA_CLUB_DE_FUTBOL",
+        "autonomous_region_id": "AN",
+        "autonomous_region_name": "Andalusia",
+        "autonomous_region_slug": "andalusia",
+        "notes": "",
+    },
+    {
+        "team_id": "CULTURAL_Y_DEPORTIVA_LEONESA_SAD",
+        "autonomous_region_id": "CL",
+        "autonomous_region_name": "Castile and León",
+        "autonomous_region_slug": "castile-and-leon",
+        "notes": "",
+    },
+    {
+        "team_id": "FC_ANDORRA",
+        "autonomous_region_id": "AD",
+        "autonomous_region_name": "Andorra",
+        "autonomous_region_slug": "andorra",
+        "notes": "Non-Spanish club in Spanish league system. Keep separate from Spanish autonomous communities.",
+    },
+    {
+        "team_id": "RACING_CLUB_DE_FERROL",
+        "autonomous_region_id": "GA",
+        "autonomous_region_name": "Galicia",
+        "autonomous_region_slug": "galicia",
+        "notes": "",
+    },
+    {
+        "team_id": "REAL_CLUB_DEPORTIVO_DE_LA_CORUNA_SAD",
+        "autonomous_region_id": "GA",
+        "autonomous_region_name": "Galicia",
+        "autonomous_region_slug": "galicia",
+        "notes": "",
+    },
+    {
+        "team_id": "REAL_RACING_CLUB_SAD",
+        "autonomous_region_id": "CB",
+        "autonomous_region_name": "Cantabria",
+        "autonomous_region_slug": "cantabria",
+        "notes": "",
+    },
+    {
+        "team_id": "VILLARREAL_CLUB_DE_FUTBOL_B",
+        "autonomous_region_id": "VC",
+        "autonomous_region_name": "Valencian Community",
+        "autonomous_region_slug": "valencian-community",
+        "notes": "",
+    },
+]
+
+write_csv(
+    "stage_9c_region_patch_new_teams.csv",
+    stage_9c_region_patch_fields,
+    stage_9c_region_patch_rows,
+)
+
+stage_9c_region_lookup = {}
+
+# Existing region maps from earlier stages
+for region_map_filename in [
+    "team_region_map_stage_4g2_exact_laliga_ids.csv",
+    "team_region_map_stage_7d_segunda_exact_laliga_ids.csv",
+]:
+    region_map_file = EXPORT_DIR / region_map_filename
+
+    if region_map_file.exists():
+        with region_map_file.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                stage_9c_region_lookup[row["team_id"]] = row
+
+# Add the new patch rows
+for row in stage_9c_region_patch_rows:
+    stage_9c_region_lookup[row["team_id"]] = row
+
+
+# -----------------------------
+# Read Stage 9B outputs
+# -----------------------------
+
+stage_9c_fixture_rows_all = []
+stage_9c_team_index_rows_all = []
+
+try:
+    fixture_file = EXPORT_DIR / "laliga_multiseason_2021_22_to_2025_26_fixtures_results.csv"
+
+    with fixture_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        stage_9c_fixture_rows_all = list(reader)
+
+except Exception as e:
+    print(f"Stage 9C fixture read failed: {type(e).__name__}: {e}")
+
+try:
+    team_index_file = EXPORT_DIR / "laliga_multiseason_2021_22_to_2025_26_team_fixture_index.csv"
+
+    with team_index_file.open("r", newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        stage_9c_team_index_rows_all = list(reader)
+
+except Exception as e:
+    print(f"Stage 9C team index read failed: {type(e).__name__}: {e}")
+
+
+# -----------------------------
+# Exclude unresolved POR_DETERMINAR fixtures from app-ready confirmed export
+# -----------------------------
+
+stage_9c_excluded_fixture_rows = [
+    row for row in stage_9c_fixture_rows_all
+    if row.get("home_team_id") == "POR_DETERMINAR"
+    or row.get("away_team_id") == "POR_DETERMINAR"
+]
+
+excluded_fixture_ids = set(
+    row["fixture_id"]
+    for row in stage_9c_excluded_fixture_rows
+    if row.get("fixture_id")
+)
+
+stage_9c_confirmed_fixture_rows = [
+    row for row in stage_9c_fixture_rows_all
+    if row.get("fixture_id") not in excluded_fixture_ids
+]
+
+stage_9c_confirmed_team_index_rows = [
+    row for row in stage_9c_team_index_rows_all
+    if row.get("fixture_id") not in excluded_fixture_ids
+]
+
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_excluded_unconfirmed_fixtures.csv",
+    stage_8a_fixture_fields,
+    stage_9c_excluded_fixture_rows,
+)
+
+
+# -----------------------------
+# Re-apply region tags to confirmed team index rows
+# -----------------------------
+
+stage_9c_confirmed_team_index_rows_with_regions = []
+
+for row in stage_9c_confirmed_team_index_rows:
+    team_region = stage_9c_region_lookup.get(row["team_id"], {})
+    opponent_region = stage_9c_region_lookup.get(row["opponent_team_id"], {})
+
+    row["team_autonomous_region_id"] = team_region.get("autonomous_region_id", "")
+    row["team_autonomous_region_name"] = team_region.get("autonomous_region_name", "")
+    row["team_autonomous_region_slug"] = team_region.get("autonomous_region_slug", "")
+
+    row["opponent_autonomous_region_id"] = opponent_region.get("autonomous_region_id", "")
+    row["opponent_autonomous_region_name"] = opponent_region.get("autonomous_region_name", "")
+    row["opponent_autonomous_region_slug"] = opponent_region.get("autonomous_region_slug", "")
+
+    stage_9c_confirmed_team_index_rows_with_regions.append(row)
+
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_confirmed_fixtures_results_clean.csv",
+    stage_8a_fixture_fields,
+    stage_9c_confirmed_fixture_rows,
+)
+
+write_csv(
+    "laliga_multiseason_2021_22_to_2025_26_confirmed_team_fixture_index_clean.csv",
+    stage_8a_team_index_fields,
+    stage_9c_confirmed_team_index_rows_with_regions,
+)
+
+
+# -----------------------------
+# Stage 9C validation summary
+# -----------------------------
+
+stage_9c_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+fixture_ids = [
+    row["fixture_id"]
+    for row in stage_9c_confirmed_fixture_rows
+    if row.get("fixture_id")
+]
+
+duplicate_fixture_ids = sorted([
+    fixture_id
+    for fixture_id in set(fixture_ids)
+    if fixture_ids.count(fixture_id) > 1
+])
+
+team_fixture_ids = [
+    row["team_fixture_id"]
+    for row in stage_9c_confirmed_team_index_rows_with_regions
+    if row.get("team_fixture_id")
+]
+
+duplicate_team_fixture_ids = sorted([
+    team_fixture_id
+    for team_fixture_id in set(team_fixture_ids)
+    if team_fixture_ids.count(team_fixture_id) > 1
+])
+
+missing_team_regions = [
+    row for row in stage_9c_confirmed_team_index_rows_with_regions
+    if not row.get("team_autonomous_region_id")
+]
+
+missing_opponent_regions = [
+    row for row in stage_9c_confirmed_team_index_rows_with_regions
+    if not row.get("opponent_autonomous_region_id")
+]
+
+teams_missing_regions = sorted(set(
+    row["team_id"]
+    for row in missing_team_regions
+    if row.get("team_id")
+))
+
+opponents_missing_regions = sorted(set(
+    row["opponent_team_id"]
+    for row in missing_opponent_regions
+    if row.get("opponent_team_id")
+))
+
+primera_regular_count = len([
+    row for row in stage_9c_confirmed_fixture_rows
+    if row.get("competition_id") == "PRIMERA_DIVISION"
+    and row.get("fixture_phase") == "regular_season"
+])
+
+segunda_regular_count = len([
+    row for row in stage_9c_confirmed_fixture_rows
+    if row.get("competition_id") == "SEGUNDA_DIVISION"
+    and row.get("fixture_phase") == "regular_season"
+])
+
+segunda_playoff_count = len([
+    row for row in stage_9c_confirmed_fixture_rows
+    if row.get("competition_id") == "SEGUNDA_DIVISION"
+    and row.get("fixture_phase") == "promotion_playoff"
+])
+
+stage_9c_validation_rows = [
+    {
+        "check_name": "confirmed_fixture_rows",
+        "result": str(len(stage_9c_confirmed_fixture_rows)),
+        "details": "Expected 4238 if two unconfirmed 2025/26 playoff placeholder fixtures are excluded.",
+    },
+    {
+        "check_name": "confirmed_team_fixture_index_rows",
+        "result": str(len(stage_9c_confirmed_team_index_rows_with_regions)),
+        "details": "Expected 8476 if two unconfirmed fixtures are excluded.",
+    },
+    {
+        "check_name": "excluded_unconfirmed_fixture_rows",
+        "result": str(len(stage_9c_excluded_fixture_rows)),
+        "details": "Rows containing POR_DETERMINAR.",
+    },
+    {
+        "check_name": "primera_regular_fixture_rows",
+        "result": str(primera_regular_count),
+        "details": "Expected 1900.",
+    },
+    {
+        "check_name": "segunda_regular_fixture_rows",
+        "result": str(segunda_regular_count),
+        "details": "Expected 2310.",
+    },
+    {
+        "check_name": "segunda_confirmed_playoff_fixture_rows",
+        "result": str(segunda_playoff_count),
+        "details": "Expected 28 if two future/unconfirmed playoff placeholders are excluded.",
+    },
+    {
+        "check_name": "duplicate_fixture_ids",
+        "result": str(len(duplicate_fixture_ids)),
+        "details": "|".join(duplicate_fixture_ids),
+    },
+    {
+        "check_name": "duplicate_team_fixture_ids",
+        "result": str(len(duplicate_team_fixture_ids)),
+        "details": "|".join(duplicate_team_fixture_ids),
+    },
+    {
+        "check_name": "missing_team_region_tags",
+        "result": str(len(missing_team_regions)),
+        "details": "|".join(teams_missing_regions),
+    },
+    {
+        "check_name": "missing_opponent_region_tags",
+        "result": str(len(missing_opponent_regions)),
+        "details": "|".join(opponents_missing_regions),
+    },
+]
+
+write_csv(
+    "stage_9c_laliga_multiseason_clean_validation_summary.csv",
+    stage_9c_validation_fields,
+    stage_9c_validation_rows,
+)
+
+print(f"Stage 9C confirmed fixture rows: {len(stage_9c_confirmed_fixture_rows)}")
+print(f"Stage 9C confirmed team index rows: {len(stage_9c_confirmed_team_index_rows_with_regions)}")
+print(f"Stage 9C excluded unconfirmed fixture rows: {len(stage_9c_excluded_fixture_rows)}")
