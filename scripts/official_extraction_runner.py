@@ -4234,3 +4234,162 @@ write_csv(
 )
 
 print("Stage 8B Segunda playoff discovery complete.")
+# -----------------------------
+# Stage 8C: Segunda División 2021/22 playoff final discovery
+# -----------------------------
+
+stage_8c_discovery_fields = [
+    "candidate_name",
+    "candidate_url",
+    "http_status",
+    "success",
+    "next_data_found",
+    "matches_found",
+    "match_count",
+    "sample_home_team",
+    "sample_away_team",
+    "sample_home_score",
+    "sample_away_score",
+    "notes",
+]
+
+stage_8c_discovery_rows = []
+
+playoff_final_candidate_urls = []
+
+for jornada in range(45, 49):
+    playoff_final_candidate_urls.append({
+        "candidate_name": f"Segunda 2021-22 Jornada {jornada}",
+        "candidate_url": f"https://www.laliga.com/laliga-hypermotion/resultados/2021-22/jornada-{jornada}",
+    })
+
+for candidate in playoff_final_candidate_urls:
+    candidate_name = candidate["candidate_name"]
+    candidate_url = candidate["candidate_url"]
+
+    try:
+        request = urllib.request.Request(
+            candidate_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            status_code = response.getcode()
+            html = response.read().decode("utf-8", errors="ignore")
+
+        next_data_match = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+            html,
+            re.DOTALL
+        )
+
+        next_data_found = bool(next_data_match)
+        matches_found = False
+        match_count = 0
+        sample_home_team = ""
+        sample_away_team = ""
+        sample_home_score = ""
+        sample_away_score = ""
+        notes = ""
+
+        if next_data_match:
+            try:
+                next_data = json.loads(next_data_match.group(1))
+                matches = next_data.get("props", {}).get("pageProps", {}).get("matches", [])
+
+                if isinstance(matches, list) and matches:
+                    matches_found = True
+                    match_count = len(matches)
+
+                    sample_match = matches[0]
+                    sample_home = sample_match.get("home_team", {})
+                    sample_away = sample_match.get("away_team", {})
+
+                    sample_home_team = (
+                        sample_home.get("name")
+                        or sample_home.get("nickname")
+                        or sample_home.get("short_name")
+                        or ""
+                    )
+
+                    sample_away_team = (
+                        sample_away.get("name")
+                        or sample_away.get("nickname")
+                        or sample_away.get("short_name")
+                        or ""
+                    )
+
+                    sample_home_score = str(sample_match.get("home_score", ""))
+                    sample_away_score = str(sample_match.get("away_score", ""))
+
+                    safe_name = re.sub(r"[^A-Za-z0-9]+", "_", candidate_name).strip("_").lower()
+                    playoff_json_path = EXPORT_DIR / f"stage_8c_{safe_name}.json"
+                    playoff_json_path.write_text(
+                        json.dumps(next_data, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                else:
+                    notes = "NEXT_DATA found, but props.pageProps.matches was empty or missing."
+
+            except Exception as e:
+                notes = f"NEXT_DATA found, but JSON parse or match inspection failed: {type(e).__name__}: {e}"
+
+        else:
+            notes = "No __NEXT_DATA__ JSON found."
+
+        stage_8c_discovery_rows.append({
+            "candidate_name": candidate_name,
+            "candidate_url": candidate_url,
+            "http_status": str(status_code),
+            "success": str(status_code == 200).lower(),
+            "next_data_found": str(next_data_found).lower(),
+            "matches_found": str(matches_found).lower(),
+            "match_count": str(match_count),
+            "sample_home_team": sample_home_team,
+            "sample_away_team": sample_away_team,
+            "sample_home_score": sample_home_score,
+            "sample_away_score": sample_away_score,
+            "notes": notes,
+        })
+
+    except urllib.error.HTTPError as e:
+        stage_8c_discovery_rows.append({
+            "candidate_name": candidate_name,
+            "candidate_url": candidate_url,
+            "http_status": str(e.code),
+            "success": "false",
+            "next_data_found": "false",
+            "matches_found": "false",
+            "match_count": "0",
+            "sample_home_team": "",
+            "sample_away_team": "",
+            "sample_home_score": "",
+            "sample_away_score": "",
+            "notes": f"HTTPError: {e.reason}",
+        })
+
+    except Exception as e:
+        stage_8c_discovery_rows.append({
+            "candidate_name": candidate_name,
+            "candidate_url": candidate_url,
+            "http_status": "",
+            "success": "false",
+            "next_data_found": "false",
+            "matches_found": "false",
+            "match_count": "0",
+            "sample_home_team": "",
+            "sample_away_team": "",
+            "sample_home_score": "",
+            "sample_away_score": "",
+            "notes": f"Error: {type(e).__name__}: {e}",
+        })
+
+write_csv(
+    "stage_8c_segunda_2021_22_playoff_final_discovery.csv",
+    stage_8c_discovery_fields,
+    stage_8c_discovery_rows,
+)
+
+print("Stage 8C Segunda playoff final discovery complete.")
