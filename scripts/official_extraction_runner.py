@@ -5754,7 +5754,113 @@ write_csv(
 # -----------------------------
 # Re-apply region tags to confirmed team index rows
 # -----------------------------
+# -----------------------------
+# Stage 10B: Extract candidate RFEF links from promising pages
+# -----------------------------
 
+from urllib.parse import urljoin
+
+stage_10b_fields = [
+    "source_page_name",
+    "source_page_url",
+    "link_text",
+    "link_url",
+    "keyword_matches",
+    "notes",
+]
+
+stage_10b_rows = []
+
+rfef_link_source_pages = [
+    {
+        "source_page_name": "RFEF actas page",
+        "source_page_url": "https://rfef.es/es/federacion/actas",
+    },
+    {
+        "source_page_name": "RFEF Primera Federación competition page",
+        "source_page_url": "https://rfef.es/es/competiciones/primera-federacion",
+    },
+]
+
+rfef_link_keywords = [
+    "primera",
+    "federacion",
+    "federación",
+    "grupo",
+    "grupo 1",
+    "grupo 2",
+    "calendario",
+    "actas",
+    "resultados",
+    "competicion",
+    "competición",
+    "matches",
+    "partidos",
+]
+
+for source_page in rfef_link_source_pages:
+    source_page_name = source_page["source_page_name"]
+    source_page_url = source_page["source_page_url"]
+
+    try:
+        request = urllib.request.Request(
+            source_page_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            html = response.read().decode("utf-8", errors="ignore")
+
+        # Extract simple anchor tags.
+        link_matches = re.findall(
+            r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for href, raw_text in link_matches:
+            link_text = re.sub(r"<[^>]+>", " ", raw_text)
+            link_text = re.sub(r"\s+", " ", link_text).strip()
+
+            full_url = urljoin(source_page_url, href)
+
+            searchable_text = f"{link_text} {full_url}".lower()
+
+            matched_keywords = [
+                keyword
+                for keyword in rfef_link_keywords
+                if keyword.lower() in searchable_text
+            ]
+
+            if matched_keywords:
+                stage_10b_rows.append({
+                    "source_page_name": source_page_name,
+                    "source_page_url": source_page_url,
+                    "link_text": link_text,
+                    "link_url": full_url,
+                    "keyword_matches": "|".join(matched_keywords),
+                    "notes": "Candidate RFEF link for Primera Federación data discovery.",
+                })
+
+    except Exception as e:
+        stage_10b_rows.append({
+            "source_page_name": source_page_name,
+            "source_page_url": source_page_url,
+            "link_text": "",
+            "link_url": "",
+            "keyword_matches": "",
+            "notes": f"Stage 10B failed for this page: {type(e).__name__}: {e}",
+        })
+
+write_csv(
+    "stage_10b_rfef_candidate_links.csv",
+    stage_10b_fields,
+    stage_10b_rows,
+)
+
+print(f"Stage 10B extracted {len(stage_10b_rows)} candidate RFEF links.")
 stage_9c_confirmed_team_index_rows_with_regions = []
 
 for row in stage_9c_confirmed_team_index_rows:
