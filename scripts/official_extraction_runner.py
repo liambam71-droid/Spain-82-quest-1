@@ -6023,3 +6023,130 @@ audit_note_path = EXPORT_DIR / "laliga_multiseason_2021_22_to_2025_26_audit_note
 audit_note_path.write_text(audit_note, encoding="utf-8")
 
 print("Stage 9D audit note created.")
+# -----------------------------
+# Stage 10A: RFEF Primera Federación source discovery
+# -----------------------------
+
+stage_10a_fields = [
+    "candidate_name",
+    "candidate_url",
+    "http_status",
+    "success",
+    "html_length",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_calendario",
+    "contains_actas",
+    "contains_resultados",
+    "sample_text",
+    "notes",
+]
+
+stage_10a_rows = []
+
+rfef_candidate_urls = [
+    {
+        "candidate_name": "RFEF Primera Federación competition page",
+        "candidate_url": "https://rfef.es/es/competiciones/primera-federacion",
+    },
+    {
+        "candidate_name": "RFEF general resultados page",
+        "candidate_url": "https://rfef.es/es/resultados",
+    },
+    {
+        "candidate_name": "RFEF actas page",
+        "candidate_url": "https://rfef.es/es/actas",
+    },
+    {
+        "candidate_name": "RFEF federation actas page",
+        "candidate_url": "https://rfef.es/es/federacion/actas",
+    },
+    {
+        "candidate_name": "RFEF calendar transparency page",
+        "candidate_url": "https://rfef.es/es/federacion/transparencia/calendario-temporada-vigente",
+    },
+]
+
+for candidate in rfef_candidate_urls:
+    candidate_name = candidate["candidate_name"]
+    candidate_url = candidate["candidate_url"]
+
+    try:
+        request = urllib.request.Request(
+            candidate_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            status_code = response.getcode()
+            html = response.read().decode("utf-8", errors="ignore")
+
+        html_lower = html.lower()
+
+        # Save raw HTML samples for inspection.
+        safe_name = re.sub(r"[^A-Za-z0-9]+", "_", candidate_name).strip("_").lower()
+        sample_path = EXPORT_DIR / f"stage_10a_{safe_name}.html"
+        sample_path.write_text(html[:20000], encoding="utf-8")
+
+        sample_text = re.sub(r"\s+", " ", html[:1000]).strip()
+
+        stage_10a_rows.append({
+            "candidate_name": candidate_name,
+            "candidate_url": candidate_url,
+            "http_status": str(status_code),
+            "success": str(status_code == 200).lower(),
+            "html_length": str(len(html)),
+            "contains_primera_federacion": str("primera federación" in html_lower or "primera federacion" in html_lower).lower(),
+            "contains_grupo_1": str("grupo 1" in html_lower).lower(),
+            "contains_grupo_2": str("grupo 2" in html_lower).lower(),
+            "contains_calendario": str("calendario" in html_lower).lower(),
+            "contains_actas": str("actas" in html_lower).lower(),
+            "contains_resultados": str("resultados" in html_lower).lower(),
+            "sample_text": sample_text,
+            "notes": "Raw HTML sample saved for inspection.",
+        })
+
+    except urllib.error.HTTPError as e:
+        stage_10a_rows.append({
+            "candidate_name": candidate_name,
+            "candidate_url": candidate_url,
+            "http_status": str(e.code),
+            "success": "false",
+            "html_length": "0",
+            "contains_primera_federacion": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_calendario": "false",
+            "contains_actas": "false",
+            "contains_resultados": "false",
+            "sample_text": "",
+            "notes": f"HTTPError: {e.reason}",
+        })
+
+    except Exception as e:
+        stage_10a_rows.append({
+            "candidate_name": candidate_name,
+            "candidate_url": candidate_url,
+            "http_status": "",
+            "success": "false",
+            "html_length": "0",
+            "contains_primera_federacion": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_calendario": "false",
+            "contains_actas": "false",
+            "contains_resultados": "false",
+            "sample_text": "",
+            "notes": f"Error: {type(e).__name__}: {e}",
+        })
+
+write_csv(
+    "stage_10a_rfef_primera_federacion_source_discovery.csv",
+    stage_10a_fields,
+    stage_10a_rows,
+)
+
+print("Stage 10A RFEF Primera Federación source discovery complete.")
