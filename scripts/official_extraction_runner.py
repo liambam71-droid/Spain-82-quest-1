@@ -2774,7 +2774,165 @@ stage_6d_validation_fields = [
     "result",
     "details",
 ]
+# -----------------------------
+# Stage 7A: Extract Segunda División 2021/22 matchdays 1-3
+# -----------------------------
 
+stage_7a_raw_fields = [
+    "source_url",
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "matchday",
+    "fixture_date",
+    "home_team_name_source",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "extraction_method",
+    "data_confidence",
+    "notes",
+]
+
+stage_7a_raw_rows = []
+
+season_id = "2021-22"
+competition_id = "SEGUNDA_DIVISION"
+competition_name = "Segunda División"
+
+for matchday in range(1, 4):
+    source_url = f"https://www.laliga.com/laliga-hypermotion/resultados/{season_id}/jornada-{matchday}"
+
+    try:
+        request = urllib.request.Request(
+            source_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 Spain82QuestDataBot/0.1"
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            html = response.read().decode("utf-8", errors="ignore")
+
+        next_data_match = re.search(
+            r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>',
+            html,
+            re.DOTALL
+        )
+
+        if not next_data_match:
+            stage_7a_raw_rows.append({
+                "source_url": source_url,
+                "season_id": season_id,
+                "competition_id": competition_id,
+                "competition_name": competition_name,
+                "matchday": str(matchday),
+                "fixture_date": "",
+                "home_team_name_source": "",
+                "away_team_name_source": "",
+                "home_score": "",
+                "away_score": "",
+                "extraction_method": "failed_no_next_data",
+                "data_confidence": "failed",
+                "notes": "No __NEXT_DATA__ JSON found.",
+            })
+            continue
+
+        next_data = json.loads(next_data_match.group(1))
+        matches = next_data["props"]["pageProps"]["matches"]
+
+        for match in matches:
+            home_team = match.get("home_team", {})
+            away_team = match.get("away_team", {})
+
+            home_name = (
+                home_team.get("name")
+                or home_team.get("nickname")
+                or home_team.get("short_name")
+                or ""
+            )
+
+            away_name = (
+                away_team.get("name")
+                or away_team.get("nickname")
+                or away_team.get("short_name")
+                or ""
+            )
+
+            stage_7a_raw_rows.append({
+                "source_url": source_url,
+                "season_id": season_id,
+                "competition_id": competition_id,
+                "competition_name": competition_name,
+                "matchday": str(matchday),
+                "fixture_date": match.get("date", ""),
+                "home_team_name_source": home_name,
+                "away_team_name_source": away_name,
+                "home_score": match.get("home_score", ""),
+                "away_score": match.get("away_score", ""),
+                "extraction_method": "next_data_props_pageProps_matches",
+                "data_confidence": "high",
+                "notes": "",
+            })
+
+    except Exception as e:
+        stage_7a_raw_rows.append({
+            "source_url": source_url,
+            "season_id": season_id,
+            "competition_id": competition_id,
+            "competition_name": competition_name,
+            "matchday": str(matchday),
+            "fixture_date": "",
+            "home_team_name_source": "",
+            "away_team_name_source": "",
+            "home_score": "",
+            "away_score": "",
+            "extraction_method": "failed",
+            "data_confidence": "failed",
+            "notes": f"Error: {type(e).__name__}: {e}",
+        })
+
+write_csv(
+    "stage_7a_segunda_2021_22_j1_to_j3_raw.csv",
+    stage_7a_raw_fields,
+    stage_7a_raw_rows,
+)
+
+# -----------------------------
+# Stage 7A validation summary
+# -----------------------------
+
+stage_7a_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+failed_rows = [
+    row for row in stage_7a_raw_rows
+    if row.get("data_confidence") == "failed"
+]
+
+stage_7a_validation_rows = [
+    {
+        "check_name": "raw_fixture_rows",
+        "result": str(len(stage_7a_raw_rows)),
+        "details": "Expected 33 rows for 3 matchdays x 11 fixtures.",
+    },
+    {
+        "check_name": "failed_rows",
+        "result": str(len(failed_rows)),
+        "details": "Expected 0.",
+    },
+]
+
+write_csv(
+    "stage_7a_segunda_2021_22_validation_summary.csv",
+    stage_7a_validation_fields,
+    stage_7a_validation_rows,
+)
+
+print(f"Stage 7A extracted {len(stage_7a_raw_rows)} raw Segunda fixture rows.")
 missing_team_regions = [
     row for row in stage_6d_rows
     if not row.get("team_autonomous_region_id")
