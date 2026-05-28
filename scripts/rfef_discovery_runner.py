@@ -812,3 +812,253 @@ write_csv(
 )
 
 print(f"RFEF Stage 4 found {len(rfef_regular_discovery_rows)} regular-season code candidates.")
+# -----------------------------
+# RFEF Stage 5: inspect official Primera Federación competition page for calendar/group links
+# -----------------------------
+
+rfef_competition_page_fields = [
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "contains_calendario",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_actas",
+    "contains_resultados",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "notes",
+]
+
+rfef_competition_page_rows = []
+
+competition_page_url = "https://rfef.es/es/competiciones/primera-federacion"
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        page.goto(competition_page_url, wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(2000)
+                    break
+            except Exception:
+                pass
+
+        page_html = page.content()
+        page_text = page.inner_text("body")
+
+        html_path = EXPORT_DIR / "rfef_stage_5_primera_federacion_competition_page.html"
+        html_path.write_text(page_html[:700000], encoding="utf-8")
+
+        text_path = EXPORT_DIR / "rfef_stage_5_primera_federacion_competition_page_text.txt"
+        text_path.write_text(page_text[:200000], encoding="utf-8")
+
+        def extract_code_from_text(text, label):
+            patterns = {
+                "cod_temporada": [
+                    r"CodTemporada=([0-9]+)",
+                    r"codtemporada=([0-9]+)",
+                    r"codtemporada%3D([0-9]+)",
+                ],
+                "cod_competicion": [
+                    r"CodCompeticion=([0-9]+)",
+                    r"codcompeticion=([0-9]+)",
+                    r"codcompeticion%3D([0-9]+)",
+                ],
+                "cod_grupo": [
+                    r"CodGrupo=([0-9]+)",
+                    r"codgrupo=([0-9]+)",
+                    r"codgrupo%3D([0-9]+)",
+                ],
+                "cod_jornada": [
+                    r"CodJornada=([0-9]+)",
+                    r"codjornada=([0-9]+)",
+                    r"codjornada%3D([0-9]+)",
+                ],
+            }
+
+            for pattern in patterns[label]:
+                match = re.search(pattern, text, re.IGNORECASE)
+                if match:
+                    return match.group(1)
+            return ""
+
+        def add_candidate(item_type, label_or_text, href_or_action, notes):
+            searchable = f"{label_or_text} {href_or_action}".lower()
+
+            rfef_competition_page_rows.append({
+                "item_type": item_type,
+                "label_or_text": label_or_text[:1500],
+                "href_or_action": href_or_action,
+                "contains_calendario": str("calendario" in searchable).lower(),
+                "contains_grupo_1": str("grupo 1" in searchable or "grupo i" in searchable).lower(),
+                "contains_grupo_2": str("grupo 2" in searchable or "grupo ii" in searchable).lower(),
+                "contains_actas": str("acta" in searchable or "actas" in searchable).lower(),
+                "contains_resultados": str("resultado" in searchable or "resultados" in searchable).lower(),
+                "cod_temporada": extract_code_from_text(href_or_action + " " + label_or_text, "cod_temporada"),
+                "cod_competicion": extract_code_from_text(href_or_action + " " + label_or_text, "cod_competicion"),
+                "cod_grupo": extract_code_from_text(href_or_action + " " + label_or_text, "cod_grupo"),
+                "cod_jornada": extract_code_from_text(href_or_action + " " + label_or_text, "cod_jornada"),
+                "notes": notes,
+            })
+
+        # 1. Extract all links from the competition page.
+        links = page.locator("a")
+        link_count = links.count()
+
+        for i in range(link_count):
+            try:
+                link = links.nth(i)
+                text = link.inner_text().strip()
+                href = link.get_attribute("href") or ""
+                full_href = urljoin(competition_page_url, href)
+
+                searchable = f"{text} {full_href}".lower()
+
+                if (
+                    "calendario" in searchable
+                    or "acta" in searchable
+                    or "resultado" in searchable
+                    or "grupo" in searchable
+                    or "primera" in searchable
+                    or "federacion" in searchable
+                    or "federación" in searchable
+                    or "codcompeticion" in searchable
+                    or "codgrupo" in searchable
+                    or "codtemporada" in searchable
+                ):
+                    add_candidate(
+                        "link",
+                        text,
+                        full_href,
+                        "Candidate link from official Primera Federación competition page.",
+                    )
+
+            except Exception:
+                pass
+
+        # 2. Extract buttons and clickable elements.
+        clickable_selectors = [
+            "button",
+            "[role=button]",
+            ".btn",
+            ".button",
+            "[onclick]",
+        ]
+
+        for selector in clickable_selectors:
+            try:
+                elements = page.locator(selector)
+                count = elements.count()
+
+                for i in range(count):
+                    try:
+                        el = elements.nth(i)
+                        text = el.inner_text().strip()
+                        onclick = el.get_attribute("onclick") or ""
+                        href = el.get_attribute("href") or ""
+                        action = onclick or href
+
+                        searchable = f"{text} {action}".lower()
+
+                        if (
+                            "calendario" in searchable
+                            or "acta" in searchable
+                            or "resultado" in searchable
+                            or "grupo" in searchable
+                            or "primera" in searchable
+                            or "federacion" in searchable
+                            or "federación" in searchable
+                            or "codcompeticion" in searchable
+                            or "codgrupo" in searchable
+                            or "codtemporada" in searchable
+                        ):
+                            add_candidate(
+                                f"clickable:{selector}",
+                                text,
+                                action,
+                                "Candidate clickable element from competition page.",
+                            )
+                    except Exception:
+                        pass
+
+            except Exception:
+                pass
+
+        # 3. Extract nearby HTML fragments containing important words.
+        fragments = re.split(r"[\n\r]+|</a>|</button>|</div>|</li>|</tr>", page_html)
+
+        for fragment in fragments:
+            clean_fragment = re.sub(r"<[^>]+>", " ", fragment)
+            clean_fragment = re.sub(r"\s+", " ", clean_fragment).strip()
+            searchable = clean_fragment.lower()
+
+            if (
+                "calendario" in searchable
+                or "actas" in searchable
+                or "resultados" in searchable
+                or "grupo 1" in searchable
+                or "grupo 2" in searchable
+                or "grupo i" in searchable
+                or "grupo ii" in searchable
+            ):
+                href_match = re.search(r'href=["\']([^"\']+)["\']', fragment, re.IGNORECASE)
+                href = href_match.group(1) if href_match else ""
+                full_href = urljoin(competition_page_url, href) if href else ""
+
+                add_candidate(
+                    "html_fragment",
+                    clean_fragment,
+                    full_href,
+                    "Relevant HTML fragment from official competition page.",
+                )
+
+        browser.close()
+
+except Exception as e:
+    rfef_competition_page_rows.append({
+        "item_type": "error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "contains_calendario": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_actas": "false",
+        "contains_resultados": "false",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "notes": f"RFEF Stage 5 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_primera_federacion_competition_page_candidates.csv",
+    rfef_competition_page_fields,
+    rfef_competition_page_rows,
+)
+
+print(f"RFEF Stage 5 found {len(rfef_competition_page_rows)} competition page candidates.")
