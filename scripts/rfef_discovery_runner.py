@@ -2724,3 +2724,294 @@ write_csv(
 )
 
 print(f"RFEF Stage 12 found {len(rfef_stage_12_rows)} promising wider grupo_categoria candidates.")
+# -----------------------------
+# RFEF Stage 13: discover all grupo_categoria/category IDs from page HTML and scripts
+# -----------------------------
+
+rfef_stage_13_fields = [
+    "source",
+    "item_type",
+    "matched_text",
+    "category_id",
+    "nearby_text",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo",
+    "contains_calendario",
+    "contains_resultados",
+    "notes",
+]
+
+rfef_stage_13_rows = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    stage_13_urls = [
+        {
+            "source": "marcadores accion 1",
+            "url": "https://marcadores.rfef.es/pnfg/?accion=1",
+        },
+        {
+            "source": "RFEF Primera Federación page",
+            "url": "https://rfef.es/es/competiciones/primera-federacion",
+        },
+    ]
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for source_page in stage_13_urls:
+            page = browser.new_page(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                )
+            )
+
+            try:
+                page.goto(source_page["url"], wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(2000)
+                            break
+                    except Exception:
+                        pass
+
+                page_html = page.content()
+                page_text = page.inner_text("body")
+
+                safe_source = re.sub(r"[^A-Za-z0-9]+", "_", source_page["source"]).strip("_").lower()
+                html_path = EXPORT_DIR / f"rfef_stage_13_{safe_source}.html"
+                html_path.write_text(page_html[:1000000], encoding="utf-8")
+
+                text_path = EXPORT_DIR / f"rfef_stage_13_{safe_source}_text.txt"
+                text_path.write_text(page_text[:300000], encoding="utf-8")
+
+                combined_source = page_html + "\n\n" + page_text
+
+                # Patterns for category-like values and explicit grupo_categoria assignments.
+                patterns = [
+                    r"grupo_categoria[^0-9]{0,40}([0-9]{6,})",
+                    r"grupoCategoria[^0-9]{0,40}([0-9]{6,})",
+                    r"categoria[^0-9]{0,40}([0-9]{6,})",
+                    r"Categor[ií]a[^0-9]{0,40}([0-9]{6,})",
+                    r"category[^0-9]{0,40}([0-9]{6,})",
+                    r"([0-9]{9})",
+                ]
+
+                seen_matches = set()
+
+                for pattern in patterns:
+                    for match in re.finditer(pattern, combined_source, re.IGNORECASE):
+                        category_id = match.group(1)
+                        start = max(match.start() - 500, 0)
+                        end = min(match.end() + 500, len(combined_source))
+                        nearby = combined_source[start:end]
+                        nearby_clean = re.sub(r"<[^>]+>", " ", nearby)
+                        nearby_clean = re.sub(r"\s+", " ", nearby_clean).strip()
+                        nearby_lower = nearby_clean.lower()
+
+                        key = (source_page["source"], pattern, category_id, nearby_clean[:100])
+
+                        if key in seen_matches:
+                            continue
+
+                        seen_matches.add(key)
+
+                        # Only keep likely useful 900-style category IDs or rows near useful football words.
+                        useful_context = (
+                            "primera" in nearby_lower
+                            or "federaci" in nearby_lower
+                            or "grupo" in nearby_lower
+                            or "calendario" in nearby_lower
+                            or "resultado" in nearby_lower
+                            or "categoria" in nearby_lower
+                            or "categoría" in nearby_lower
+                            or "grupo_categoria" in nearby_lower
+                        )
+
+                        if category_id.startswith("900") or useful_context:
+                            rfef_stage_13_rows.append({
+                                "source": source_page["source"],
+                                "item_type": "regex_match",
+                                "matched_text": match.group(0)[:300],
+                                "category_id": category_id,
+                                "nearby_text": nearby_clean[:1500],
+                                "contains_primera_federacion": str(
+                                    "primera federación" in nearby_lower
+                                    or "primera federacion" in nearby_lower
+                                    or "primera federaci" in nearby_lower
+                                ).lower(),
+                                "contains_liga_regular": str(
+                                    "liga regular" in nearby_lower
+                                    or "fase regular" in nearby_lower
+                                ).lower(),
+                                "contains_grupo": str("grupo" in nearby_lower).lower(),
+                                "contains_calendario": str("calendario" in nearby_lower).lower(),
+                                "contains_resultados": str(
+                                    "resultado" in nearby_lower
+                                    or "resultados" in nearby_lower
+                                ).lower(),
+                                "notes": f"Matched using pattern: {pattern}",
+                            })
+
+                # Also inspect script src URLs.
+                script_matches = re.findall(
+                    r'<script[^>]+src=["\']([^"\']+)["\']',
+                    page_html,
+                    re.IGNORECASE,
+                )
+
+                for script_src in script_matches:
+                    full_script_url = urljoin(source_page["url"], script_src)
+                    script_lower = full_script_url.lower()
+
+                    if (
+                        "pnfg" in script_lower
+                        or "compet" in script_lower
+                        or "categoria" in script_lower
+                        or "marcadores" in script_lower
+                    ):
+                        rfef_stage_13_rows.append({
+                            "source": source_page["source"],
+                            "item_type": "script_src",
+                            "matched_text": full_script_url,
+                            "category_id": "",
+                            "nearby_text": "",
+                            "contains_primera_federacion": "false",
+                            "contains_liga_regular": "false",
+                            "contains_grupo": "false",
+                            "contains_calendario": "false",
+                            "contains_resultados": "false",
+                            "notes": "Potentially relevant script source.",
+                        })
+
+            except Exception as e:
+                rfef_stage_13_rows.append({
+                    "source": source_page["source"],
+                    "item_type": "error",
+                    "matched_text": "",
+                    "category_id": "",
+                    "nearby_text": "",
+                    "contains_primera_federacion": "false",
+                    "contains_liga_regular": "false",
+                    "contains_grupo": "false",
+                    "contains_calendario": "false",
+                    "contains_resultados": "false",
+                    "notes": f"Stage 13 page scan failed: {type(e).__name__}: {e}",
+                })
+
+            page.close()
+
+        browser.close()
+
+except Exception as e:
+    rfef_stage_13_rows.append({
+        "source": "",
+        "item_type": "stage_error",
+        "matched_text": "",
+        "category_id": "",
+        "nearby_text": "",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo": "false",
+        "contains_calendario": "false",
+        "contains_resultados": "false",
+        "notes": f"RFEF Stage 13 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_13_category_id_discovery.csv",
+    rfef_stage_13_fields,
+    rfef_stage_13_rows,
+)
+
+# Deduplicated category list
+rfef_stage_13_unique_fields = [
+    "category_id",
+    "sources",
+    "occurrences",
+    "best_nearby_text",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo",
+    "contains_calendario",
+    "contains_resultados",
+]
+
+category_summary = {}
+
+for row in rfef_stage_13_rows:
+    category_id = row.get("category_id", "")
+
+    if not category_id:
+        continue
+
+    if category_id not in category_summary:
+        category_summary[category_id] = {
+            "category_id": category_id,
+            "sources": set(),
+            "occurrences": 0,
+            "best_nearby_text": row.get("nearby_text", ""),
+            "contains_primera_federacion": row.get("contains_primera_federacion", "false"),
+            "contains_liga_regular": row.get("contains_liga_regular", "false"),
+            "contains_grupo": row.get("contains_grupo", "false"),
+            "contains_calendario": row.get("contains_calendario", "false"),
+            "contains_resultados": row.get("contains_resultados", "false"),
+        }
+
+    category_summary[category_id]["sources"].add(row.get("source", ""))
+    category_summary[category_id]["occurrences"] += 1
+
+    for flag in [
+        "contains_primera_federacion",
+        "contains_liga_regular",
+        "contains_grupo",
+        "contains_calendario",
+        "contains_resultados",
+    ]:
+        if row.get(flag) == "true":
+            category_summary[category_id][flag] = "true"
+
+    if len(row.get("nearby_text", "")) > len(category_summary[category_id]["best_nearby_text"]):
+        category_summary[category_id]["best_nearby_text"] = row.get("nearby_text", "")
+
+rfef_stage_13_unique_rows = []
+
+for summary in category_summary.values():
+    rfef_stage_13_unique_rows.append({
+        "category_id": summary["category_id"],
+        "sources": "|".join(sorted(summary["sources"])),
+        "occurrences": str(summary["occurrences"]),
+        "best_nearby_text": summary["best_nearby_text"][:1500],
+        "contains_primera_federacion": summary["contains_primera_federacion"],
+        "contains_liga_regular": summary["contains_liga_regular"],
+        "contains_grupo": summary["contains_grupo"],
+        "contains_calendario": summary["contains_calendario"],
+        "contains_resultados": summary["contains_resultados"],
+    })
+
+rfef_stage_13_unique_rows = sorted(
+    rfef_stage_13_unique_rows,
+    key=lambda row: row["category_id"],
+)
+
+write_csv(
+    "rfef_stage_13_unique_category_ids.csv",
+    rfef_stage_13_unique_fields,
+    rfef_stage_13_unique_rows,
+)
+
+print(f"RFEF Stage 13 found {len(rfef_stage_13_rows)} category/context rows.")
+print(f"RFEF Stage 13 found {len(rfef_stage_13_unique_rows)} unique category IDs.")
