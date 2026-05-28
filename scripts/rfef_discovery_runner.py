@@ -359,4 +359,4 @@ write_csv(
     code_discovery_rows,
 )
 
-print(f"RFEF code discovery completed with {len(code_discovery_rows)} rows."
+print(f"RFEF code discovery completed with {len(code_discovery_rows)} rows.")
