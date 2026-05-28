@@ -3015,3 +3015,254 @@ write_csv(
 
 print(f"RFEF Stage 13 found {len(rfef_stage_13_rows)} category/context rows.")
 print(f"RFEF Stage 13 found {len(rfef_stage_13_unique_rows)} unique category IDs.")
+# -----------------------------
+# RFEF Stage 14: extract Primera Federación team links and inspect team pages
+# -----------------------------
+
+rfef_stage_14_team_link_fields = [
+    "team_link_text",
+    "team_url",
+    "competition_page_code",
+    "team_code",
+    "notes",
+]
+
+rfef_stage_14_page_test_fields = [
+    "team_link_text",
+    "team_url",
+    "http_status",
+    "page_loaded",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_calendario",
+    "contains_resultados",
+    "contains_actas",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "contains_codtemporada",
+    "sample_text",
+    "notes",
+]
+
+rfef_stage_14_team_links = []
+rfef_stage_14_page_tests = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    competition_page_url = "https://rfef.es/es/competiciones/primera-federacion"
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        page.goto(competition_page_url, wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(2000)
+                    break
+            except Exception:
+                pass
+
+        page_html = page.content()
+        page_text = page.inner_text("body")
+
+        html_path = EXPORT_DIR / "rfef_stage_14_primera_federacion_competition_page.html"
+        html_path.write_text(page_html[:1000000], encoding="utf-8")
+
+        text_path = EXPORT_DIR / "rfef_stage_14_primera_federacion_competition_page_text.txt"
+        text_path.write_text(page_text[:300000], encoding="utf-8")
+
+        # Extract team links of the form /competiciones/primera-federacion/equipo/2468/11989
+        link_matches = re.findall(
+            r'<a[^>]+href=["\']([^"\']*?/competiciones/primera-federacion/equipo/([0-9]+)/([0-9]+)[^"\']*)["\'][^>]*>(.*?)</a>',
+            page_html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        seen_team_urls = set()
+
+        for href, competition_page_code, team_code, raw_text in link_matches:
+            team_link_text = re.sub(r"<[^>]+>", " ", raw_text)
+            team_link_text = re.sub(r"\s+", " ", team_link_text).strip()
+
+            team_url = urljoin(competition_page_url, href)
+
+            if team_url in seen_team_urls:
+                continue
+
+            seen_team_urls.add(team_url)
+
+            rfef_stage_14_team_links.append({
+                "team_link_text": team_link_text,
+                "team_url": team_url,
+                "competition_page_code": competition_page_code,
+                "team_code": team_code,
+                "notes": "Team link extracted from official Primera Federación competition page.",
+            })
+
+        page.close()
+
+        # Inspect a sample of team pages, enough to see whether fixture/result links exist.
+        sample_team_links = rfef_stage_14_team_links[:12]
+
+        for team in sample_team_links:
+            team_url = team["team_url"]
+            team_link_text = team["team_link_text"]
+
+            try:
+                team_page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                )
+
+                response = team_page.goto(team_url, wait_until="networkidle", timeout=60000)
+                status = response.status if response else ""
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if team_page.locator(selector).count() > 0:
+                            team_page.locator(selector).first.click(timeout=3000)
+                            team_page.wait_for_timeout(2000)
+                            break
+                    except Exception:
+                        pass
+
+                team_html = team_page.content()
+                team_text = team_page.inner_text("body")
+                team_text_lower = team_text.lower()
+                team_html_lower = team_html.lower()
+
+                safe_team = re.sub(r"[^A-Za-z0-9]+", "_", team_link_text).strip("_").lower()[:80]
+                if not safe_team:
+                    safe_team = team["team_code"]
+
+                team_html_path = EXPORT_DIR / f"rfef_stage_14_team_page_{safe_team}.html"
+                team_html_path.write_text(team_html[:500000], encoding="utf-8")
+
+                sample_text = re.sub(r"\s+", " ", team_text[:4000]).strip()
+
+                rfef_stage_14_page_tests.append({
+                    "team_link_text": team_link_text,
+                    "team_url": team_url,
+                    "http_status": str(status),
+                    "page_loaded": "true",
+                    "contains_primera_federacion": str(
+                        "primera federación" in team_text_lower
+                        or "primera federacion" in team_text_lower
+                        or "primera federación" in team_html_lower
+                        or "primera federacion" in team_html_lower
+                    ).lower(),
+                    "contains_grupo_1": str(
+                        "grupo 1" in team_text_lower
+                        or "grupo i" in team_text_lower
+                        or "grupo 1" in team_html_lower
+                        or "grupo i" in team_html_lower
+                    ).lower(),
+                    "contains_grupo_2": str(
+                        "grupo 2" in team_text_lower
+                        or "grupo ii" in team_text_lower
+                        or "grupo 2" in team_html_lower
+                        or "grupo ii" in team_html_lower
+                    ).lower(),
+                    "contains_jornada": str(
+                        "jornada" in team_text_lower
+                        or "jornada" in team_html_lower
+                    ).lower(),
+                    "contains_calendario": str(
+                        "calendario" in team_text_lower
+                        or "calendario" in team_html_lower
+                    ).lower(),
+                    "contains_resultados": str(
+                        "resultado" in team_text_lower
+                        or "resultados" in team_text_lower
+                        or "resultado" in team_html_lower
+                        or "resultados" in team_html_lower
+                    ).lower(),
+                    "contains_actas": str(
+                        "acta" in team_text_lower
+                        or "actas" in team_text_lower
+                        or "acta" in team_html_lower
+                        or "actas" in team_html_lower
+                    ).lower(),
+                    "contains_codcompeticion": str("codcompeticion" in team_html_lower).lower(),
+                    "contains_codgrupo": str("codgrupo" in team_html_lower).lower(),
+                    "contains_codtemporada": str("codtemporada" in team_html_lower).lower(),
+                    "sample_text": sample_text,
+                    "notes": "Sample Primera Federación team page inspected.",
+                })
+
+                team_page.close()
+
+            except Exception as e:
+                rfef_stage_14_page_tests.append({
+                    "team_link_text": team_link_text,
+                    "team_url": team_url,
+                    "http_status": "",
+                    "page_loaded": "false",
+                    "contains_primera_federacion": "false",
+                    "contains_grupo_1": "false",
+                    "contains_grupo_2": "false",
+                    "contains_jornada": "false",
+                    "contains_calendario": "false",
+                    "contains_resultados": "false",
+                    "contains_actas": "false",
+                    "contains_codcompeticion": "false",
+                    "contains_codgrupo": "false",
+                    "contains_codtemporada": "false",
+                    "sample_text": "",
+                    "notes": f"Team page inspection failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    rfef_stage_14_team_links.append({
+        "team_link_text": "",
+        "team_url": "",
+        "competition_page_code": "",
+        "team_code": "",
+        "notes": f"RFEF Stage 14 team link extraction failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_14_primera_federacion_team_links.csv",
+    rfef_stage_14_team_link_fields,
+    rfef_stage_14_team_links,
+)
+
+write_csv(
+    "rfef_stage_14_team_page_inspection.csv",
+    rfef_stage_14_page_test_fields,
+    rfef_stage_14_page_tests,
+)
+
+print(f"RFEF Stage 14 extracted {len(rfef_stage_14_team_links)} Primera Federación team links.")
+print(f"RFEF Stage 14 inspected {len(rfef_stage_14_page_tests)} sample team pages.")
