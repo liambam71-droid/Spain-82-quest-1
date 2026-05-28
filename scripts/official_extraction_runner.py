@@ -6387,3 +6387,154 @@ write_csv(
 )
 
 print("Stage 10C RFEF direct link tests complete.")
+# -----------------------------
+# Stage 10D: Retry RFEF direct links with cookie-style headers
+# -----------------------------
+
+stage_10d_fields = [
+    "test_name",
+    "test_url",
+    "http_status",
+    "success",
+    "html_length",
+    "cookie_message_present",
+    "contains_primera_federacion",
+    "contains_grupo",
+    "contains_jornada",
+    "contains_fecha",
+    "contains_resultado",
+    "contains_local",
+    "contains_visitante",
+    "contains_acta",
+    "contains_calendario",
+    "sample_text",
+    "notes",
+]
+
+stage_10d_rows = []
+
+rfef_cookie_tests = [
+    {
+        "test_name": "RFEF calendar example with cookie headers",
+        "test_url": "https://resultados.rfef.es/pnfg/NPcd/NFG_VisCalendario_Vis?cod_primaria=1000120&codtemporada=20&codcompeticion=901769680&codgrupo=901769681",
+    },
+    {
+        "test_name": "RFEF jornada 1 example with cookie headers",
+        "test_url": "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada?cod_primaria=1000120&CodCompeticion=901769680&CodGrupo=901769681&CodTemporada=20&CodJornada=1",
+    },
+]
+
+rfef_cookie_header = (
+    "cookiesession1=accepted; "
+    "cookieConsent=true; "
+    "cookies_accepted=true; "
+    "aceptarCookies=true; "
+    "rgpd=1; "
+    "PHPSESSID=dummy"
+)
+
+for test in rfef_cookie_tests:
+    test_name = test["test_name"]
+    test_url = test["test_url"]
+
+    try:
+        request = urllib.request.Request(
+            test_url,
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                              "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+                "Referer": "https://resultados.rfef.es/",
+                "Cookie": rfef_cookie_header,
+            }
+        )
+
+        with urllib.request.urlopen(request, timeout=30) as response:
+            status_code = response.getcode()
+            html = response.read().decode("utf-8", errors="ignore")
+
+        html_lower = html.lower()
+
+        safe_name = re.sub(r"[^A-Za-z0-9]+", "_", test_name).strip("_").lower()
+        sample_path = EXPORT_DIR / f"stage_10d_{safe_name}.html"
+        sample_path.write_text(html[:50000], encoding="utf-8")
+
+        sample_text = re.sub(r"<[^>]+>", " ", html[:2500])
+        sample_text = re.sub(r"\s+", " ", sample_text).strip()
+
+        cookie_message_present = (
+            "no se ha aceptado el cookie" in html_lower
+            or "no se ha aceptado la cookie" in html_lower
+            or "cookie" in sample_text.lower() and "aceptado" in sample_text.lower()
+        )
+
+        stage_10d_rows.append({
+            "test_name": test_name,
+            "test_url": test_url,
+            "http_status": str(status_code),
+            "success": str(status_code == 200 and not cookie_message_present).lower(),
+            "html_length": str(len(html)),
+            "cookie_message_present": str(cookie_message_present).lower(),
+            "contains_primera_federacion": str("primera federación" in html_lower or "primera federacion" in html_lower).lower(),
+            "contains_grupo": str("grupo" in html_lower).lower(),
+            "contains_jornada": str("jornada" in html_lower).lower(),
+            "contains_fecha": str("fecha" in html_lower).lower(),
+            "contains_resultado": str("resultado" in html_lower or "resultados" in html_lower).lower(),
+            "contains_local": str("local" in html_lower).lower(),
+            "contains_visitante": str("visitante" in html_lower).lower(),
+            "contains_acta": str("acta" in html_lower or "actas" in html_lower).lower(),
+            "contains_calendario": str("calendario" in html_lower).lower(),
+            "sample_text": sample_text,
+            "notes": "Retried RFEF page with browser-style headers and cookie-style values.",
+        })
+
+    except urllib.error.HTTPError as e:
+        stage_10d_rows.append({
+            "test_name": test_name,
+            "test_url": test_url,
+            "http_status": str(e.code),
+            "success": "false",
+            "html_length": "0",
+            "cookie_message_present": "",
+            "contains_primera_federacion": "false",
+            "contains_grupo": "false",
+            "contains_jornada": "false",
+            "contains_fecha": "false",
+            "contains_resultado": "false",
+            "contains_local": "false",
+            "contains_visitante": "false",
+            "contains_acta": "false",
+            "contains_calendario": "false",
+            "sample_text": "",
+            "notes": f"HTTPError: {e.reason}",
+        })
+
+    except Exception as e:
+        stage_10d_rows.append({
+            "test_name": test_name,
+            "test_url": test_url,
+            "http_status": "",
+            "success": "false",
+            "html_length": "0",
+            "cookie_message_present": "",
+            "contains_primera_federacion": "false",
+            "contains_grupo": "false",
+            "contains_jornada": "false",
+            "contains_fecha": "false",
+            "contains_resultado": "false",
+            "contains_local": "false",
+            "contains_visitante": "false",
+            "contains_acta": "false",
+            "contains_calendario": "false",
+            "sample_text": "",
+            "notes": f"Error: {type(e).__name__}: {e}",
+        })
+
+write_csv(
+    "stage_10d_rfef_cookie_header_tests.csv",
+    stage_10d_fields,
+    stage_10d_rows,
+)
+
+print("Stage 10D RFEF cookie-header tests complete.")
