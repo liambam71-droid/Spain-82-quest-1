@@ -1591,3 +1591,259 @@ write_csv(
 )
 
 print(f"RFEF Stage 8 captured {len(rfef_panel_rows)} panel request/response rows.")
+# -----------------------------
+# RFEF Stage 9: parse panel response for fixture/result code links
+# -----------------------------
+
+rfef_stage_9_fields = [
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "cod_acta",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_calendario",
+    "contains_acta",
+    "contains_resultado",
+    "notes",
+]
+
+rfef_stage_9_rows = []
+
+
+def stage_9_extract_code(text, patterns):
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+stage_9_code_patterns = {
+    "cod_temporada": [
+        r"CodTemporada=([0-9]+)",
+        r"codtemporada=([0-9]+)",
+        r"CodTemporada&quot;?:?&?quot;?([0-9]+)",
+        r"codtemporada&quot;?:?&?quot;?([0-9]+)",
+    ],
+    "cod_competicion": [
+        r"CodCompeticion=([0-9]+)",
+        r"codcompeticion=([0-9]+)",
+        r"CodCompeticion&quot;?:?&?quot;?([0-9]+)",
+        r"codcompeticion&quot;?:?&?quot;?([0-9]+)",
+    ],
+    "cod_grupo": [
+        r"CodGrupo=([0-9]+)",
+        r"codgrupo=([0-9]+)",
+        r"CodGrupo&quot;?:?&?quot;?([0-9]+)",
+        r"codgrupo&quot;?:?&?quot;?([0-9]+)",
+    ],
+    "cod_jornada": [
+        r"CodJornada=([0-9]+)",
+        r"codjornada=([0-9]+)",
+        r"CodJornada&quot;?:?&?quot;?([0-9]+)",
+        r"codjornada&quot;?:?&?quot;?([0-9]+)",
+    ],
+    "cod_acta": [
+        r"CodActa=([0-9]+)",
+        r"codacta=([0-9]+)",
+        r"codacta&quot;?:?&?quot;?([0-9]+)",
+    ],
+}
+
+try:
+    panel_files = sorted(EXPORT_DIR.glob("rfef_stage_8_panel_response_*.html"))
+
+    if not panel_files:
+        rfef_stage_9_rows.append({
+            "item_type": "error",
+            "label_or_text": "",
+            "href_or_action": "",
+            "cod_temporada": "",
+            "cod_competicion": "",
+            "cod_grupo": "",
+            "cod_jornada": "",
+            "cod_acta": "",
+            "contains_primera_federacion": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_jornada": "false",
+            "contains_calendario": "false",
+            "contains_acta": "false",
+            "contains_resultado": "false",
+            "notes": "No Stage 8 panel response HTML files found.",
+        })
+
+    for panel_file in panel_files:
+        panel_html = panel_file.read_text(encoding="utf-8", errors="ignore")
+        panel_lower = panel_html.lower()
+
+        # Save a plain-text version for easier manual inspection.
+        plain_text = re.sub(r"<[^>]+>", " ", panel_html)
+        plain_text = re.sub(r"\s+", " ", plain_text).strip()
+
+        plain_path = EXPORT_DIR / f"{panel_file.stem}_plain_text.txt"
+        plain_path.write_text(plain_text[:500000], encoding="utf-8")
+
+        # 1. Extract anchor hrefs.
+        link_matches = re.findall(
+            r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            panel_html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for href, raw_text in link_matches:
+            label = re.sub(r"<[^>]+>", " ", raw_text)
+            label = re.sub(r"\s+", " ", label).strip()
+
+            combined = f"{label} {href}"
+            combined_lower = combined.lower()
+
+            if (
+                "codcompeticion" in combined_lower
+                or "codgrupo" in combined_lower
+                or "codtemporada" in combined_lower
+                or "codjornada" in combined_lower
+                or "codacta" in combined_lower
+                or "primera" in combined_lower
+                or "federaci" in combined_lower
+                or "grupo" in combined_lower
+                or "jornada" in combined_lower
+                or "calendario" in combined_lower
+                or "acta" in combined_lower
+                or "resultado" in combined_lower
+            ):
+                rfef_stage_9_rows.append({
+                    "item_type": "link",
+                    "label_or_text": label[:1200],
+                    "href_or_action": href,
+                    "cod_temporada": stage_9_extract_code(combined, stage_9_code_patterns["cod_temporada"]),
+                    "cod_competicion": stage_9_extract_code(combined, stage_9_code_patterns["cod_competicion"]),
+                    "cod_grupo": stage_9_extract_code(combined, stage_9_code_patterns["cod_grupo"]),
+                    "cod_jornada": stage_9_extract_code(combined, stage_9_code_patterns["cod_jornada"]),
+                    "cod_acta": stage_9_extract_code(combined, stage_9_code_patterns["cod_acta"]),
+                    "contains_primera_federacion": str("primera federación" in combined_lower or "primera federacion" in combined_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in combined_lower or "grupo i" in combined_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in combined_lower or "grupo ii" in combined_lower).lower(),
+                    "contains_jornada": str("jornada" in combined_lower).lower(),
+                    "contains_calendario": str("calendario" in combined_lower).lower(),
+                    "contains_acta": str("acta" in combined_lower).lower(),
+                    "contains_resultado": str("resultado" in combined_lower or "resultados" in combined_lower).lower(),
+                    "notes": f"Link extracted from {panel_file.name}",
+                })
+
+        # 2. Extract onclick/action fragments.
+        onclick_matches = re.findall(
+            r'onclick=["\']([^"\']+)["\']',
+            panel_html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for onclick in onclick_matches:
+            combined = onclick
+            combined_lower = combined.lower()
+
+            if (
+                "codcompeticion" in combined_lower
+                or "codgrupo" in combined_lower
+                or "codtemporada" in combined_lower
+                or "codjornada" in combined_lower
+                or "codacta" in combined_lower
+                or "jornada" in combined_lower
+                or "calendario" in combined_lower
+                or "acta" in combined_lower
+                or "resultado" in combined_lower
+            ):
+                rfef_stage_9_rows.append({
+                    "item_type": "onclick",
+                    "label_or_text": "",
+                    "href_or_action": onclick[:1500],
+                    "cod_temporada": stage_9_extract_code(combined, stage_9_code_patterns["cod_temporada"]),
+                    "cod_competicion": stage_9_extract_code(combined, stage_9_code_patterns["cod_competicion"]),
+                    "cod_grupo": stage_9_extract_code(combined, stage_9_code_patterns["cod_grupo"]),
+                    "cod_jornada": stage_9_extract_code(combined, stage_9_code_patterns["cod_jornada"]),
+                    "cod_acta": stage_9_extract_code(combined, stage_9_code_patterns["cod_acta"]),
+                    "contains_primera_federacion": str("primera federación" in combined_lower or "primera federacion" in combined_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in combined_lower or "grupo i" in combined_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in combined_lower or "grupo ii" in combined_lower).lower(),
+                    "contains_jornada": str("jornada" in combined_lower).lower(),
+                    "contains_calendario": str("calendario" in combined_lower).lower(),
+                    "contains_acta": str("acta" in combined_lower).lower(),
+                    "contains_resultado": str("resultado" in combined_lower or "resultados" in combined_lower).lower(),
+                    "notes": f"Onclick extracted from {panel_file.name}",
+                })
+
+        # 3. Extract HTML fragments around code-looking values.
+        fragments = re.split(r"[\n\r]+|</a>|</button>|</div>|</li>|</tr>|</span>", panel_html)
+
+        for fragment in fragments:
+            fragment_lower = fragment.lower()
+
+            if (
+                "codcompeticion" in fragment_lower
+                or "codgrupo" in fragment_lower
+                or "codtemporada" in fragment_lower
+                or "codjornada" in fragment_lower
+                or "codacta" in fragment_lower
+                or "primera federación" in fragment_lower
+                or "primera federacion" in fragment_lower
+                or "grupo 1" in fragment_lower
+                or "grupo 2" in fragment_lower
+                or "grupo i" in fragment_lower
+                or "grupo ii" in fragment_lower
+            ):
+                label = re.sub(r"<[^>]+>", " ", fragment)
+                label = re.sub(r"\s+", " ", label).strip()
+
+                rfef_stage_9_rows.append({
+                    "item_type": "html_fragment",
+                    "label_or_text": label[:1500],
+                    "href_or_action": fragment[:1500],
+                    "cod_temporada": stage_9_extract_code(fragment, stage_9_code_patterns["cod_temporada"]),
+                    "cod_competicion": stage_9_extract_code(fragment, stage_9_code_patterns["cod_competicion"]),
+                    "cod_grupo": stage_9_extract_code(fragment, stage_9_code_patterns["cod_grupo"]),
+                    "cod_jornada": stage_9_extract_code(fragment, stage_9_code_patterns["cod_jornada"]),
+                    "cod_acta": stage_9_extract_code(fragment, stage_9_code_patterns["cod_acta"]),
+                    "contains_primera_federacion": str("primera federación" in fragment_lower or "primera federacion" in fragment_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in fragment_lower or "grupo i" in fragment_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in fragment_lower or "grupo ii" in fragment_lower).lower(),
+                    "contains_jornada": str("jornada" in fragment_lower).lower(),
+                    "contains_calendario": str("calendario" in fragment_lower).lower(),
+                    "contains_acta": str("acta" in fragment_lower).lower(),
+                    "contains_resultado": str("resultado" in fragment_lower or "resultados" in fragment_lower).lower(),
+                    "notes": f"HTML fragment extracted from {panel_file.name}",
+                })
+
+except Exception as e:
+    rfef_stage_9_rows.append({
+        "item_type": "error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "cod_acta": "",
+        "contains_primera_federacion": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_calendario": "false",
+        "contains_acta": "false",
+        "contains_resultado": "false",
+        "notes": f"RFEF Stage 9 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_9_panel_code_links.csv",
+    rfef_stage_9_fields,
+    rfef_stage_9_rows,
+)
+
+print(f"RFEF Stage 9 extracted {len(rfef_stage_9_rows)} panel code/link candidates.")
