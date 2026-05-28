@@ -360,3 +360,162 @@ write_csv(
 )
 
 print(f"RFEF code discovery completed with {len(code_discovery_rows)} rows.")
+# -----------------------------
+# RFEF Stage 3: test discovered RFEF code sets
+# -----------------------------
+
+rfef_code_set_test_fields = [
+    "code_set_name",
+    "test_url",
+    "http_status",
+    "page_loaded",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_local",
+    "contains_visitante",
+    "contains_resultado",
+    "sample_text",
+    "notes",
+]
+
+rfef_code_set_test_rows = []
+
+rfef_code_sets_to_test = [
+    {
+        "code_set_name": "Discovered code set A",
+        "cod_temporada": "21",
+        "cod_competicion": "23289293",
+        "cod_grupo": "23289294",
+        "cod_jornada": "42",
+    },
+    {
+        "code_set_name": "Discovered code set B",
+        "cod_temporada": "21",
+        "cod_competicion": "23289454",
+        "cod_grupo": "23289455",
+        "cod_jornada": "1",
+    },
+    {
+        "code_set_name": "Discovered code set C",
+        "cod_temporada": "21",
+        "cod_competicion": "23289468",
+        "cod_grupo": "23289469",
+        "cod_jornada": "4",
+    },
+]
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for code_set in rfef_code_sets_to_test:
+            test_url = (
+                "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada"
+                "?cod_primaria=1000120"
+                f"&CodCompeticion={code_set['cod_competicion']}"
+                f"&CodGrupo={code_set['cod_grupo']}"
+                f"&CodTemporada={code_set['cod_temporada']}"
+                f"&CodJornada={code_set['cod_jornada']}"
+            )
+
+            try:
+                page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                )
+
+                page.goto(test_url, wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(2000)
+                            break
+                    except Exception:
+                        pass
+
+                page_text = page.inner_text("body")
+                page_html = page.content()
+                page_text_lower = page_text.lower()
+
+                safe_name = re.sub(r"[^A-Za-z0-9]+", "_", code_set["code_set_name"]).strip("_").lower()
+                html_path = EXPORT_DIR / f"rfef_stage_3_{safe_name}.html"
+                html_path.write_text(page_html[:150000], encoding="utf-8")
+
+                sample_text = re.sub(r"\s+", " ", page_text[:4000]).strip()
+
+                rfef_code_set_test_rows.append({
+                    "code_set_name": code_set["code_set_name"],
+                    "test_url": test_url,
+                    "http_status": "browser",
+                    "page_loaded": "true",
+                    "contains_primera_federacion": str("primera federación" in page_text_lower or "primera federacion" in page_text_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in page_text_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in page_text_lower).lower(),
+                    "contains_jornada": str("jornada" in page_text_lower).lower(),
+                    "contains_local": str("local" in page_text_lower).lower(),
+                    "contains_visitante": str("visitante" in page_text_lower).lower(),
+                    "contains_resultado": str("resultado" in page_text_lower or "resultados" in page_text_lower).lower(),
+                    "sample_text": sample_text,
+                    "notes": "Code set tested through Playwright browser session.",
+                })
+
+                page.close()
+
+            except Exception as e:
+                rfef_code_set_test_rows.append({
+                    "code_set_name": code_set["code_set_name"],
+                    "test_url": test_url,
+                    "http_status": "",
+                    "page_loaded": "false",
+                    "contains_primera_federacion": "false",
+                    "contains_grupo_1": "false",
+                    "contains_grupo_2": "false",
+                    "contains_jornada": "false",
+                    "contains_local": "false",
+                    "contains_visitante": "false",
+                    "contains_resultado": "false",
+                    "sample_text": "",
+                    "notes": f"Code set test failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    rfef_code_set_test_rows.append({
+        "code_set_name": "stage_error",
+        "test_url": "",
+        "http_status": "",
+        "page_loaded": "false",
+        "contains_primera_federacion": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_local": "false",
+        "contains_visitante": "false",
+        "contains_resultado": "false",
+        "sample_text": "",
+        "notes": f"RFEF Stage 3 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_code_set_test_results.csv",
+    rfef_code_set_test_fields,
+    rfef_code_set_test_rows,
+)
+
+print(f"RFEF Stage 3 tested {len(rfef_code_set_test_rows)} code sets.")
