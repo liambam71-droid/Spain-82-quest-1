@@ -1062,3 +1062,205 @@ write_csv(
 )
 
 print(f"RFEF Stage 5 found {len(rfef_competition_page_rows)} competition page candidates.")
+# -----------------------------
+# RFEF Stage 6: inspect dropdown hierarchy on marcadores page
+# -----------------------------
+
+rfef_dropdown_fields = [
+    "select_index",
+    "select_name",
+    "select_id",
+    "select_label_guess",
+    "option_index",
+    "option_text",
+    "option_value",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "notes",
+]
+
+rfef_dropdown_rows = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    dropdown_url = "https://marcadores.rfef.es/pnfg/?accion=1"
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        page.goto(dropdown_url, wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(2000)
+                    break
+            except Exception:
+                pass
+
+        page_html = page.content()
+        html_path = EXPORT_DIR / "rfef_stage_6_dropdown_page.html"
+        html_path.write_text(page_html[:700000], encoding="utf-8")
+
+        selects = page.locator("select")
+        select_count = selects.count()
+
+        for select_index in range(select_count):
+            try:
+                select = selects.nth(select_index)
+
+                select_name = select.get_attribute("name") or ""
+                select_id = select.get_attribute("id") or ""
+
+                # Try to find nearby/preceding label text.
+                select_label_guess = ""
+
+                try:
+                    if select_id:
+                        label_locator = page.locator(f"label[for='{select_id}']")
+                        if label_locator.count() > 0:
+                            select_label_guess = label_locator.first.inner_text().strip()
+                except Exception:
+                    pass
+
+                if not select_label_guess:
+                    try:
+                        parent_text = select.locator("xpath=..").inner_text().strip()
+                        select_label_guess = re.sub(r"\s+", " ", parent_text[:300])
+                    except Exception:
+                        pass
+
+                options = select.locator("option")
+                option_count = options.count()
+
+                for option_index in range(option_count):
+                    try:
+                        option = options.nth(option_index)
+
+                        option_text = option.inner_text().strip()
+                        option_value = option.get_attribute("value") or ""
+
+                        searchable = f"{select_name} {select_id} {select_label_guess} {option_text} {option_value}".lower()
+
+                        rfef_dropdown_rows.append({
+                            "select_index": str(select_index),
+                            "select_name": select_name,
+                            "select_id": select_id,
+                            "select_label_guess": select_label_guess,
+                            "option_index": str(option_index),
+                            "option_text": option_text,
+                            "option_value": option_value,
+                            "contains_primera_federacion": str(
+                                "primera federación" in searchable
+                                or "primera federacion" in searchable
+                                or "1ª federación" in searchable
+                                or "1ª federacion" in searchable
+                            ).lower(),
+                            "contains_liga_regular": str(
+                                "liga regular" in searchable
+                                or "fase regular" in searchable
+                            ).lower(),
+                            "contains_grupo_1": str(
+                                "grupo 1" in searchable
+                                or "grupo i" in searchable
+                            ).lower(),
+                            "contains_grupo_2": str(
+                                "grupo 2" in searchable
+                                or "grupo ii" in searchable
+                            ).lower(),
+                            "notes": "Dropdown option discovered on marcadores page.",
+                        })
+
+                    except Exception as e:
+                        rfef_dropdown_rows.append({
+                            "select_index": str(select_index),
+                            "select_name": select_name,
+                            "select_id": select_id,
+                            "select_label_guess": select_label_guess,
+                            "option_index": str(option_index),
+                            "option_text": "",
+                            "option_value": "",
+                            "contains_primera_federacion": "false",
+                            "contains_liga_regular": "false",
+                            "contains_grupo_1": "false",
+                            "contains_grupo_2": "false",
+                            "notes": f"Option inspection failed: {type(e).__name__}: {e}",
+                        })
+
+            except Exception as e:
+                rfef_dropdown_rows.append({
+                    "select_index": str(select_index),
+                    "select_name": "",
+                    "select_id": "",
+                    "select_label_guess": "",
+                    "option_index": "",
+                    "option_text": "",
+                    "option_value": "",
+                    "contains_primera_federacion": "false",
+                    "contains_liga_regular": "false",
+                    "contains_grupo_1": "false",
+                    "contains_grupo_2": "false",
+                    "notes": f"Select inspection failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    rfef_dropdown_rows.append({
+        "select_index": "",
+        "select_name": "",
+        "select_id": "",
+        "select_label_guess": "",
+        "option_index": "",
+        "option_text": "",
+        "option_value": "",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "notes": f"RFEF Stage 6 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_6_dropdown_hierarchy.csv",
+    rfef_dropdown_fields,
+    rfef_dropdown_rows,
+)
+
+# Small filtered summary of promising dropdown options
+rfef_dropdown_filtered_fields = rfef_dropdown_fields
+
+rfef_dropdown_filtered_rows = [
+    row for row in rfef_dropdown_rows
+    if row["contains_primera_federacion"] == "true"
+    or row["contains_liga_regular"] == "true"
+    or row["contains_grupo_1"] == "true"
+    or row["contains_grupo_2"] == "true"
+]
+
+write_csv(
+    "rfef_stage_6_dropdown_hierarchy_filtered.csv",
+    rfef_dropdown_filtered_fields,
+    rfef_dropdown_filtered_rows,
+)
+
+print(f"RFEF Stage 6 found {len(rfef_dropdown_rows)} dropdown option rows.")
+print(f"RFEF Stage 6 found {len(rfef_dropdown_filtered_rows)} filtered candidate rows.")
