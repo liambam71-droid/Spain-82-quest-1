@@ -1412,3 +1412,182 @@ write_csv(
 )
 
 print(f"RFEF Stage 7 captured {len(rfef_network_rows)} interesting network requests.")
+# -----------------------------
+# RFEF Stage 8: capture POST payload and response for NFG_CMP_Paneles
+# -----------------------------
+
+rfef_panel_fields = [
+    "request_index",
+    "method",
+    "url",
+    "post_data",
+    "response_status",
+    "response_sample",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "contains_codtemporada",
+    "notes",
+]
+
+rfef_panel_rows = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    panel_url = "https://marcadores.rfef.es/pnfg/?accion=1"
+
+    captured_panel_requests = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        def capture_response(response):
+            try:
+                request = response.request
+                url = request.url
+
+                if "NFG_CMP_Paneles" not in url:
+                    return
+
+                post_data = request.post_data or ""
+
+                try:
+                    response_text = response.text()
+                except Exception as response_error:
+                    response_text = f"Could not read response text: {type(response_error).__name__}: {response_error}"
+
+                captured_panel_requests.append({
+                    "method": request.method,
+                    "url": url,
+                    "post_data": post_data,
+                    "response_status": response.status,
+                    "response_text": response_text,
+                })
+
+            except Exception:
+                pass
+
+        page.on("response", capture_response)
+
+        page.goto(panel_url, wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(3000)
+                    break
+            except Exception:
+                pass
+
+        page.wait_for_timeout(8000)
+
+        browser.close()
+
+    for index, captured in enumerate(captured_panel_requests):
+        response_text = captured["response_text"]
+        response_lower = response_text.lower()
+
+        safe_name = f"rfef_stage_8_panel_response_{index}.html"
+        response_path = EXPORT_DIR / safe_name
+        response_path.write_text(response_text[:1000000], encoding="utf-8")
+
+        rfef_panel_rows.append({
+            "request_index": str(index),
+            "method": captured["method"],
+            "url": captured["url"],
+            "post_data": captured["post_data"],
+            "response_status": str(captured["response_status"]),
+            "response_sample": re.sub(r"\s+", " ", response_text[:3000]).strip(),
+            "contains_primera_federacion": str(
+                "primera federación" in response_lower
+                or "primera federacion" in response_lower
+            ).lower(),
+            "contains_liga_regular": str(
+                "liga regular" in response_lower
+                or "fase regular" in response_lower
+            ).lower(),
+            "contains_grupo_1": str(
+                "grupo 1" in response_lower
+                or "grupo i" in response_lower
+            ).lower(),
+            "contains_grupo_2": str(
+                "grupo 2" in response_lower
+                or "grupo ii" in response_lower
+            ).lower(),
+            "contains_codcompeticion": str(
+                "codcompeticion" in response_lower
+                or "codcompeticion" in captured["post_data"].lower()
+            ).lower(),
+            "contains_codgrupo": str(
+                "codgrupo" in response_lower
+                or "codgrupo" in captured["post_data"].lower()
+            ).lower(),
+            "contains_codtemporada": str(
+                "codtemporada" in response_lower
+                or "codtemporada" in captured["post_data"].lower()
+            ).lower(),
+            "notes": f"Response saved to {safe_name}",
+        })
+
+    if not rfef_panel_rows:
+        rfef_panel_rows.append({
+            "request_index": "",
+            "method": "",
+            "url": "",
+            "post_data": "",
+            "response_status": "",
+            "response_sample": "",
+            "contains_primera_federacion": "false",
+            "contains_liga_regular": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_codcompeticion": "false",
+            "contains_codgrupo": "false",
+            "contains_codtemporada": "false",
+            "notes": "No NFG_CMP_Paneles responses captured.",
+        })
+
+except Exception as e:
+    rfef_panel_rows.append({
+        "request_index": "",
+        "method": "",
+        "url": "",
+        "post_data": "",
+        "response_status": "",
+        "response_sample": "",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_codcompeticion": "false",
+        "contains_codgrupo": "false",
+        "contains_codtemporada": "false",
+        "notes": f"RFEF Stage 8 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_8_panel_request_response.csv",
+    rfef_panel_fields,
+    rfef_panel_rows,
+)
+
+print(f"RFEF Stage 8 captured {len(rfef_panel_rows)} panel request/response rows.")
