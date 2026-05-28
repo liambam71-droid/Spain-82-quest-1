@@ -519,3 +519,296 @@ write_csv(
 )
 
 print(f"RFEF Stage 3 tested {len(rfef_code_set_test_rows)} code sets.")
+# -----------------------------
+# RFEF Stage 4: broader search for regular-season Primera Federación codes
+# -----------------------------
+
+rfef_regular_discovery_fields = [
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "keyword_matches",
+    "regular_season_signal",
+    "notes",
+]
+
+rfef_regular_discovery_rows = []
+
+regular_keywords = [
+    "primera federación",
+    "primera federacion",
+    "1ª federación",
+    "1ª federacion",
+    "primera federaci",
+    "liga regular",
+    "fase regular",
+    "grupo 1",
+    "grupo 2",
+    "grupo primero",
+    "grupo segundo",
+    "jornada",
+    "calendario",
+    "clasificación",
+    "clasificacion",
+    "resultados",
+]
+
+code_patterns = {
+    "cod_temporada": [
+        r"CodTemporada=([0-9]+)",
+        r"codtemporada=([0-9]+)",
+        r"cod_temporada=([0-9]+)",
+    ],
+    "cod_competicion": [
+        r"CodCompeticion=([0-9]+)",
+        r"codcompeticion=([0-9]+)",
+        r"codcompeticion%3D([0-9]+)",
+    ],
+    "cod_grupo": [
+        r"CodGrupo=([0-9]+)",
+        r"codgrupo=([0-9]+)",
+        r"codgrupo%3D([0-9]+)",
+    ],
+    "cod_jornada": [
+        r"CodJornada=([0-9]+)",
+        r"codjornada=([0-9]+)",
+        r"codjornada%3D([0-9]+)",
+    ],
+}
+
+
+def extract_first_code(text, pattern_list):
+    for pattern in pattern_list:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    discovery_pages = [
+        {
+            "name": "marcadores accion 1",
+            "url": "https://marcadores.rfef.es/pnfg/?accion=1",
+        },
+        {
+            "name": "resultados base",
+            "url": "https://resultados.rfef.es/pnfg/NPcd/NFG_VisCompeticiones",
+        },
+        {
+            "name": "actas base",
+            "url": "https://resultados.rfef.es/pnfg/NPcd/NFG_VisActas",
+        },
+    ]
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for discovery_page in discovery_pages:
+            page = browser.new_page(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                )
+            )
+
+            try:
+                page.goto(discovery_page["url"], wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(2000)
+                            break
+                    except Exception:
+                        pass
+
+                page_html = page.content()
+                page_text = page.inner_text("body")
+
+                safe_page_name = re.sub(r"[^A-Za-z0-9]+", "_", discovery_page["name"]).strip("_").lower()
+                html_path = EXPORT_DIR / f"rfef_stage_4_regular_discovery_{safe_page_name}.html"
+                html_path.write_text(page_html[:500000], encoding="utf-8")
+
+                # 1. Search full HTML lines/fragments around Primera Federación / Liga Regular.
+                html_fragments = re.split(r"[\n\r]+|</a>|</option>|</tr>|</div>", page_html)
+
+                for fragment in html_fragments:
+                    clean_fragment = re.sub(r"<[^>]+>", " ", fragment)
+                    clean_fragment = re.sub(r"\s+", " ", clean_fragment).strip()
+                    searchable = clean_fragment.lower()
+
+                    matched = [
+                        keyword for keyword in regular_keywords
+                        if keyword in searchable
+                    ]
+
+                    if matched:
+                        href_match = re.search(r'href=["\']([^"\']+)["\']', fragment, re.IGNORECASE)
+                        href = href_match.group(1) if href_match else ""
+
+                        combined_text = f"{fragment} {href}"
+
+                        cod_temporada = extract_first_code(combined_text, code_patterns["cod_temporada"])
+                        cod_competicion = extract_first_code(combined_text, code_patterns["cod_competicion"])
+                        cod_grupo = extract_first_code(combined_text, code_patterns["cod_grupo"])
+                        cod_jornada = extract_first_code(combined_text, code_patterns["cod_jornada"])
+
+                        regular_signal = (
+                            "true"
+                            if "liga regular" in searchable or "fase regular" in searchable
+                            else "false"
+                        )
+
+                        rfef_regular_discovery_rows.append({
+                            "item_type": "html_fragment",
+                            "label_or_text": clean_fragment[:1000],
+                            "href_or_action": href,
+                            "cod_temporada": cod_temporada,
+                            "cod_competicion": cod_competicion,
+                            "cod_grupo": cod_grupo,
+                            "cod_jornada": cod_jornada,
+                            "keyword_matches": "|".join(matched),
+                            "regular_season_signal": regular_signal,
+                            "notes": f"Found on {discovery_page['name']}",
+                        })
+
+                # 2. Extract all links and keep ones with useful keywords or RFEF code params.
+                links = page.locator("a")
+                link_count = links.count()
+
+                for i in range(link_count):
+                    try:
+                        link = links.nth(i)
+                        text = link.inner_text().strip()
+                        href = link.get_attribute("href") or ""
+                        full_href = urljoin(discovery_page["url"], href)
+
+                        searchable = f"{text} {full_href}".lower()
+
+                        matched = [
+                            keyword for keyword in regular_keywords
+                            if keyword in searchable
+                        ]
+
+                        has_codes = (
+                            "codcompeticion" in searchable
+                            or "codgrupo" in searchable
+                            or "codtemporada" in searchable
+                            or "codjornada" in searchable
+                        )
+
+                        if matched or has_codes:
+                            cod_temporada = extract_first_code(full_href, code_patterns["cod_temporada"])
+                            cod_competicion = extract_first_code(full_href, code_patterns["cod_competicion"])
+                            cod_grupo = extract_first_code(full_href, code_patterns["cod_grupo"])
+                            cod_jornada = extract_first_code(full_href, code_patterns["cod_jornada"])
+
+                            regular_signal = (
+                                "true"
+                                if "liga regular" in searchable or "fase regular" in searchable
+                                else "false"
+                            )
+
+                            rfef_regular_discovery_rows.append({
+                                "item_type": "link",
+                                "label_or_text": text[:1000],
+                                "href_or_action": full_href,
+                                "cod_temporada": cod_temporada,
+                                "cod_competicion": cod_competicion,
+                                "cod_grupo": cod_grupo,
+                                "cod_jornada": cod_jornada,
+                                "keyword_matches": "|".join(matched),
+                                "regular_season_signal": regular_signal,
+                                "notes": f"Link found on {discovery_page['name']}",
+                            })
+
+                    except Exception:
+                        pass
+
+                # 3. Extract options in case competition/group lives in dropdowns.
+                options = page.locator("option")
+                option_count = options.count()
+
+                for i in range(option_count):
+                    try:
+                        option = options.nth(i)
+                        text = option.inner_text().strip()
+                        value = option.get_attribute("value") or ""
+
+                        searchable = f"{text} {value}".lower()
+                        matched = [
+                            keyword for keyword in regular_keywords
+                            if keyword in searchable
+                        ]
+
+                        if matched:
+                            rfef_regular_discovery_rows.append({
+                                "item_type": "option",
+                                "label_or_text": text[:1000],
+                                "href_or_action": "",
+                                "cod_temporada": "",
+                                "cod_competicion": value,
+                                "cod_grupo": "",
+                                "cod_jornada": "",
+                                "keyword_matches": "|".join(matched),
+                                "regular_season_signal": "true" if "liga regular" in searchable else "false",
+                                "notes": f"Option found on {discovery_page['name']}",
+                            })
+
+                    except Exception:
+                        pass
+
+            except Exception as e:
+                rfef_regular_discovery_rows.append({
+                    "item_type": "error",
+                    "label_or_text": "",
+                    "href_or_action": discovery_page["url"],
+                    "cod_temporada": "",
+                    "cod_competicion": "",
+                    "cod_grupo": "",
+                    "cod_jornada": "",
+                    "keyword_matches": "",
+                    "regular_season_signal": "false",
+                    "notes": f"Stage 4 discovery failed on {discovery_page['name']}: {type(e).__name__}: {e}",
+                })
+
+            page.close()
+
+        browser.close()
+
+except Exception as e:
+    rfef_regular_discovery_rows.append({
+        "item_type": "stage_error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "keyword_matches": "",
+        "regular_season_signal": "false",
+        "notes": f"RFEF Stage 4 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_regular_season_code_discovery_candidates.csv",
+    rfef_regular_discovery_fields,
+    rfef_regular_discovery_rows,
+)
+
+print(f"RFEF Stage 4 found {len(rfef_regular_discovery_rows)} regular-season code candidates.")
