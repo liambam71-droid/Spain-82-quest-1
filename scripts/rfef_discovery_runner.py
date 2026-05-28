@@ -2264,3 +2264,263 @@ write_csv(
 )
 
 print(f"RFEF Stage 10B tested {len(rfef_stage_10b_rows)} grupo_categoria candidates with safe decoding.")
+# -----------------------------
+# RFEF Stage 11: parse grupo_categoria 900163685 response for competition/group codes
+# -----------------------------
+
+rfef_stage_11_fields = [
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_segunda_division",
+    "contains_play_off",
+    "contains_calendario",
+    "contains_acta",
+    "contains_resultado",
+    "notes",
+]
+
+rfef_stage_11_rows = []
+
+
+def rfef_stage_11_code(text, code_name):
+    patterns = {
+        "cod_temporada": [
+            r"CodTemporada=([0-9]+)",
+            r"codtemporada=([0-9]+)",
+            r"CodTemporada&quot;?:?&?quot;?([0-9]+)",
+            r"codtemporada&quot;?:?&?quot;?([0-9]+)",
+        ],
+        "cod_competicion": [
+            r"CodCompeticion=([0-9]+)",
+            r"codcompeticion=([0-9]+)",
+            r"CodCompeticion&quot;?:?&?quot;?([0-9]+)",
+            r"codcompeticion&quot;?:?&?quot;?([0-9]+)",
+        ],
+        "cod_grupo": [
+            r"CodGrupo=([0-9]+)",
+            r"codgrupo=([0-9]+)",
+            r"CodGrupo&quot;?:?&?quot;?([0-9]+)",
+            r"codgrupo&quot;?:?&?quot;?([0-9]+)",
+        ],
+        "cod_jornada": [
+            r"CodJornada=([0-9]+)",
+            r"codjornada=([0-9]+)",
+            r"CodJornada&quot;?:?&?quot;?([0-9]+)",
+            r"codjornada&quot;?:?&?quot;?([0-9]+)",
+        ],
+    }
+
+    for pattern in patterns[code_name]:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+    return ""
+
+
+try:
+    response_file = EXPORT_DIR / "rfef_stage_10b_grupo_categoria_900163685.html"
+
+    if not response_file.exists():
+        rfef_stage_11_rows.append({
+            "item_type": "error",
+            "label_or_text": "",
+            "href_or_action": "",
+            "cod_temporada": "",
+            "cod_competicion": "",
+            "cod_grupo": "",
+            "cod_jornada": "",
+            "contains_primera_federacion": "false",
+            "contains_liga_regular": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_segunda_division": "false",
+            "contains_play_off": "false",
+            "contains_calendario": "false",
+            "contains_acta": "false",
+            "contains_resultado": "false",
+            "notes": "Expected rfef_stage_10b_grupo_categoria_900163685.html was not found. Run Stage 10B first.",
+        })
+
+    else:
+        html = response_file.read_text(encoding="utf-8", errors="ignore")
+        html_lower = html.lower()
+
+        plain_text = re.sub(r"<[^>]+>", " ", html)
+        plain_text = re.sub(r"\s+", " ", plain_text).strip()
+
+        plain_path = EXPORT_DIR / "rfef_stage_11_grupo_categoria_900163685_plain_text.txt"
+        plain_path.write_text(plain_text[:500000], encoding="utf-8")
+
+        # 1. Extract links.
+        link_matches = re.findall(
+            r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for href, raw_text in link_matches:
+            label = re.sub(r"<[^>]+>", " ", raw_text)
+            label = re.sub(r"\s+", " ", label).strip()
+
+            combined = f"{label} {href}"
+            combined_lower = combined.lower()
+
+            if (
+                "codcompeticion" in combined_lower
+                or "codgrupo" in combined_lower
+                or "codtemporada" in combined_lower
+                or "codjornada" in combined_lower
+                or "primera" in combined_lower
+                or "federaci" in combined_lower
+                or "grupo" in combined_lower
+                or "jornada" in combined_lower
+                or "calendario" in combined_lower
+                or "acta" in combined_lower
+                or "resultado" in combined_lower
+                or "play off" in combined_lower
+                or "segunda" in combined_lower
+            ):
+                rfef_stage_11_rows.append({
+                    "item_type": "link",
+                    "label_or_text": label[:1500],
+                    "href_or_action": href[:1500],
+                    "cod_temporada": rfef_stage_11_code(combined, "cod_temporada"),
+                    "cod_competicion": rfef_stage_11_code(combined, "cod_competicion"),
+                    "cod_grupo": rfef_stage_11_code(combined, "cod_grupo"),
+                    "cod_jornada": rfef_stage_11_code(combined, "cod_jornada"),
+                    "contains_primera_federacion": str("primera federación" in combined_lower or "primera federacion" in combined_lower).lower(),
+                    "contains_liga_regular": str("liga regular" in combined_lower or "fase regular" in combined_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in combined_lower or "grupo i" in combined_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in combined_lower or "grupo ii" in combined_lower).lower(),
+                    "contains_segunda_division": str("segunda división" in combined_lower or "segunda division" in combined_lower).lower(),
+                    "contains_play_off": str("play off" in combined_lower or "play-off" in combined_lower or "playoff" in combined_lower).lower(),
+                    "contains_calendario": str("calendario" in combined_lower).lower(),
+                    "contains_acta": str("acta" in combined_lower).lower(),
+                    "contains_resultado": str("resultado" in combined_lower or "resultados" in combined_lower).lower(),
+                    "notes": "Link extracted from grupo_categoria 900163685 response.",
+                })
+
+        # 2. Extract onclicks.
+        onclick_matches = re.findall(
+            r'onclick=["\']([^"\']+)["\']',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for onclick in onclick_matches:
+            combined = onclick
+            combined_lower = combined.lower()
+
+            if (
+                "codcompeticion" in combined_lower
+                or "codgrupo" in combined_lower
+                or "codtemporada" in combined_lower
+                or "codjornada" in combined_lower
+                or "jornada" in combined_lower
+                or "calendario" in combined_lower
+                or "acta" in combined_lower
+                or "resultado" in combined_lower
+            ):
+                rfef_stage_11_rows.append({
+                    "item_type": "onclick",
+                    "label_or_text": "",
+                    "href_or_action": onclick[:1500],
+                    "cod_temporada": rfef_stage_11_code(combined, "cod_temporada"),
+                    "cod_competicion": rfef_stage_11_code(combined, "cod_competicion"),
+                    "cod_grupo": rfef_stage_11_code(combined, "cod_grupo"),
+                    "cod_jornada": rfef_stage_11_code(combined, "cod_jornada"),
+                    "contains_primera_federacion": str("primera federación" in combined_lower or "primera federacion" in combined_lower).lower(),
+                    "contains_liga_regular": str("liga regular" in combined_lower or "fase regular" in combined_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in combined_lower or "grupo i" in combined_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in combined_lower or "grupo ii" in combined_lower).lower(),
+                    "contains_segunda_division": str("segunda división" in combined_lower or "segunda division" in combined_lower).lower(),
+                    "contains_play_off": str("play off" in combined_lower or "play-off" in combined_lower or "playoff" in combined_lower).lower(),
+                    "contains_calendario": str("calendario" in combined_lower).lower(),
+                    "contains_acta": str("acta" in combined_lower).lower(),
+                    "contains_resultado": str("resultado" in combined_lower or "resultados" in combined_lower).lower(),
+                    "notes": "Onclick extracted from grupo_categoria 900163685 response.",
+                })
+
+        # 3. Extract fragments with codes or key competition text.
+        fragments = re.split(r"[\n\r]+|</a>|</button>|</div>|</li>|</tr>|</span>|</section>", html)
+
+        for fragment in fragments:
+            fragment_lower = fragment.lower()
+
+            if (
+                "codcompeticion" in fragment_lower
+                or "codgrupo" in fragment_lower
+                or "codtemporada" in fragment_lower
+                or "codjornada" in fragment_lower
+                or "primera federación" in fragment_lower
+                or "primera federacion" in fragment_lower
+                or "grupo 1" in fragment_lower
+                or "grupo 2" in fragment_lower
+                or "grupo i" in fragment_lower
+                or "grupo ii" in fragment_lower
+                or "liga regular" in fragment_lower
+                or "fase regular" in fragment_lower
+                or "play off" in fragment_lower
+                or "segunda división" in fragment_lower
+            ):
+                label = re.sub(r"<[^>]+>", " ", fragment)
+                label = re.sub(r"\s+", " ", label).strip()
+
+                rfef_stage_11_rows.append({
+                    "item_type": "html_fragment",
+                    "label_or_text": label[:2000],
+                    "href_or_action": fragment[:2000],
+                    "cod_temporada": rfef_stage_11_code(fragment, "cod_temporada"),
+                    "cod_competicion": rfef_stage_11_code(fragment, "cod_competicion"),
+                    "cod_grupo": rfef_stage_11_code(fragment, "cod_grupo"),
+                    "cod_jornada": rfef_stage_11_code(fragment, "cod_jornada"),
+                    "contains_primera_federacion": str("primera federación" in fragment_lower or "primera federacion" in fragment_lower).lower(),
+                    "contains_liga_regular": str("liga regular" in fragment_lower or "fase regular" in fragment_lower).lower(),
+                    "contains_grupo_1": str("grupo 1" in fragment_lower or "grupo i" in fragment_lower).lower(),
+                    "contains_grupo_2": str("grupo 2" in fragment_lower or "grupo ii" in fragment_lower).lower(),
+                    "contains_segunda_division": str("segunda división" in fragment_lower or "segunda division" in fragment_lower).lower(),
+                    "contains_play_off": str("play off" in fragment_lower or "play-off" in fragment_lower or "playoff" in fragment_lower).lower(),
+                    "contains_calendario": str("calendario" in fragment_lower).lower(),
+                    "contains_acta": str("acta" in fragment_lower).lower(),
+                    "contains_resultado": str("resultado" in fragment_lower or "resultados" in fragment_lower).lower(),
+                    "notes": "HTML fragment extracted from grupo_categoria 900163685 response.",
+                })
+
+except Exception as e:
+    rfef_stage_11_rows.append({
+        "item_type": "error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_segunda_division": "false",
+        "contains_play_off": "false",
+        "contains_calendario": "false",
+        "contains_acta": "false",
+        "contains_resultado": "false",
+        "notes": f"RFEF Stage 11 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_11_grupo_900163685_code_links.csv",
+    rfef_stage_11_fields,
+    rfef_stage_11_rows,
+)
+
+print(f"RFEF Stage 11 extracted {len(rfef_stage_11_rows)} rows from grupo_categoria 900163685 response.")
