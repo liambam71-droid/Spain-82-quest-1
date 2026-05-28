@@ -1264,3 +1264,151 @@ write_csv(
 
 print(f"RFEF Stage 6 found {len(rfef_dropdown_rows)} dropdown option rows.")
 print(f"RFEF Stage 6 found {len(rfef_dropdown_filtered_rows)} filtered candidate rows.")
+# -----------------------------
+# RFEF Stage 7: capture network requests from marcadores page
+# -----------------------------
+
+rfef_network_fields = [
+    "request_index",
+    "method",
+    "resource_type",
+    "url",
+    "contains_competicion",
+    "contains_temporada",
+    "contains_grupo",
+    "contains_jornada",
+    "contains_calendario",
+    "contains_actas",
+    "contains_resultados",
+    "contains_primera",
+    "notes",
+]
+
+rfef_network_rows = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    network_url = "https://marcadores.rfef.es/pnfg/?accion=1"
+
+    captured_requests = []
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        def capture_request(request):
+            try:
+                captured_requests.append({
+                    "method": request.method,
+                    "resource_type": request.resource_type,
+                    "url": request.url,
+                })
+            except Exception:
+                pass
+
+        page.on("request", capture_request)
+
+        page.goto(network_url, wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(3000)
+                    break
+            except Exception:
+                pass
+
+        # Wait a little longer in case the page makes delayed requests.
+        page.wait_for_timeout(5000)
+
+        page_html = page.content()
+        html_path = EXPORT_DIR / "rfef_stage_7_network_capture_page.html"
+        html_path.write_text(page_html[:500000], encoding="utf-8")
+
+        browser.close()
+
+    interesting_keywords = [
+        "competicion",
+        "competición",
+        "temporada",
+        "grupo",
+        "jornada",
+        "calendario",
+        "acta",
+        "actas",
+        "resultado",
+        "resultados",
+        "primera",
+        "federacion",
+        "federación",
+        "pnfg",
+        "NFG",
+        "Cmp",
+        "Vis",
+    ]
+
+    for index, req in enumerate(captured_requests):
+        url = req["url"]
+        searchable = url.lower()
+
+        is_interesting = any(
+            keyword.lower() in searchable
+            for keyword in interesting_keywords
+        )
+
+        if is_interesting:
+            rfef_network_rows.append({
+                "request_index": str(index),
+                "method": req["method"],
+                "resource_type": req["resource_type"],
+                "url": url,
+                "contains_competicion": str("competicion" in searchable or "competición" in searchable).lower(),
+                "contains_temporada": str("temporada" in searchable).lower(),
+                "contains_grupo": str("grupo" in searchable).lower(),
+                "contains_jornada": str("jornada" in searchable).lower(),
+                "contains_calendario": str("calendario" in searchable).lower(),
+                "contains_actas": str("acta" in searchable or "actas" in searchable).lower(),
+                "contains_resultados": str("resultado" in searchable or "resultados" in searchable).lower(),
+                "contains_primera": str("primera" in searchable).lower(),
+                "notes": "Interesting network request captured from RFEF page load.",
+            })
+
+except Exception as e:
+    rfef_network_rows.append({
+        "request_index": "",
+        "method": "",
+        "resource_type": "",
+        "url": "",
+        "contains_competicion": "false",
+        "contains_temporada": "false",
+        "contains_grupo": "false",
+        "contains_jornada": "false",
+        "contains_calendario": "false",
+        "contains_actas": "false",
+        "contains_resultados": "false",
+        "contains_primera": "false",
+        "notes": f"RFEF Stage 7 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_7_network_requests.csv",
+    rfef_network_fields,
+    rfef_network_rows,
+)
+
+print(f"RFEF Stage 7 captured {len(rfef_network_rows)} interesting network requests.")
