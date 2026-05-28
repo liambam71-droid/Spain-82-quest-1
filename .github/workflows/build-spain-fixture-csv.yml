@@ -20,6 +20,11 @@ jobs:
         run: |
           mkdir -p data/exports
 
+      - name: Install browser tools for RFEF extraction
+        run: |
+          pip install playwright
+          python -m playwright install chromium
+
       - name: Run extraction script
         run: |
           python scripts/official_extraction_runner.py
