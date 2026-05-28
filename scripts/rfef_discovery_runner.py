@@ -2524,3 +2524,203 @@ write_csv(
 )
 
 print(f"RFEF Stage 11 extracted {len(rfef_stage_11_rows)} rows from grupo_categoria 900163685 response.")
+# -----------------------------
+# RFEF Stage 12: wider grupo_categoria search for regular Primera Federación
+# -----------------------------
+
+rfef_stage_12_fields = [
+    "grupo_categoria",
+    "response_status",
+    "response_length",
+    "decode_method",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_segunda_division",
+    "contains_play_off",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "sample_text",
+    "notes",
+]
+
+rfef_stage_12_rows = []
+
+# Wider search range. Keep this modest so the workflow does not become too slow.
+grupo_categoria_candidates_12 = [
+    str(value) for value in range(900163600, 900163751)
+]
+
+
+def stage_12_safe_decode_response(response_body):
+    """Decode RFEF response bytes safely."""
+    for encoding in ["utf-8", "latin-1", "cp1252"]:
+        try:
+            return response_body.decode(encoding), encoding
+        except Exception:
+            pass
+
+    return response_body.decode("utf-8", errors="ignore"), "utf-8-ignore"
+
+
+try:
+    from playwright.sync_api import sync_playwright
+    import urllib.parse
+
+    panel_endpoint = "https://marcadores.rfef.es/pnfg/NPcd/NFG_CMP_Paneles"
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        # Open main page first to establish browser session/cookies.
+        page.goto("https://marcadores.rfef.es/pnfg/?accion=1", wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(2000)
+                    break
+            except Exception:
+                pass
+
+        for grupo_categoria in grupo_categoria_candidates_12:
+            try:
+                post_data = urllib.parse.urlencode({
+                    "cod_primaria": "3001668",
+                    "grupo_categoria": grupo_categoria,
+                    "resultados": "1",
+                    "columna": "1",
+                    "extendido": "1",
+                    "no_paginacion": "1",
+                    "tipo_peticion": "1",
+                    "N_Ajax": "1",
+                })
+
+                response = page.request.post(
+                    panel_endpoint,
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Referer": "https://marcadores.rfef.es/pnfg/?accion=1",
+                    },
+                    data=post_data,
+                    timeout=60000,
+                )
+
+                response_body = response.body()
+                response_text, decode_method = stage_12_safe_decode_response(response_body)
+                response_lower = response_text.lower()
+
+                contains_primera_federacion = (
+                    "primera federación" in response_lower
+                    or "primera federacion" in response_lower
+                )
+
+                contains_codcompeticion = "codcompeticion" in response_lower
+                contains_codgrupo = "codgrupo" in response_lower
+
+                # Only keep promising rows, otherwise the CSV becomes noisy.
+                if contains_primera_federacion or contains_codcompeticion or contains_codgrupo:
+                    safe_name = re.sub(r"[^A-Za-z0-9]+", "_", grupo_categoria).strip("_")
+                    response_path = EXPORT_DIR / f"rfef_stage_12_grupo_categoria_{safe_name}.html"
+                    response_path.write_text(response_text[:1000000], encoding="utf-8")
+
+                    sample_text = re.sub(r"<[^>]+>", " ", response_text[:6000])
+                    sample_text = re.sub(r"\s+", " ", sample_text).strip()
+
+                    rfef_stage_12_rows.append({
+                        "grupo_categoria": grupo_categoria,
+                        "response_status": str(response.status),
+                        "response_length": str(len(response_text)),
+                        "decode_method": decode_method,
+                        "contains_primera_federacion": str(contains_primera_federacion).lower(),
+                        "contains_liga_regular": str(
+                            "liga regular" in response_lower
+                            or "fase regular" in response_lower
+                        ).lower(),
+                        "contains_grupo_1": str(
+                            "grupo 1" in response_lower
+                            or "grupo i" in response_lower
+                        ).lower(),
+                        "contains_grupo_2": str(
+                            "grupo 2" in response_lower
+                            or "grupo ii" in response_lower
+                        ).lower(),
+                        "contains_segunda_division": str(
+                            "segunda división" in response_lower
+                            or "segunda division" in response_lower
+                        ).lower(),
+                        "contains_play_off": str(
+                            "play off" in response_lower
+                            or "play-off" in response_lower
+                            or "playoff" in response_lower
+                        ).lower(),
+                        "contains_codcompeticion": str(contains_codcompeticion).lower(),
+                        "contains_codgrupo": str(contains_codgrupo).lower(),
+                        "sample_text": sample_text,
+                        "notes": "Promising wider grupo_categoria result. Full response sample saved.",
+                    })
+
+            except Exception as e:
+                # Keep only errors that may matter for a category likely to be interesting.
+                if grupo_categoria in ["900163685", "900163686"]:
+                    rfef_stage_12_rows.append({
+                        "grupo_categoria": grupo_categoria,
+                        "response_status": "",
+                        "response_length": "0",
+                        "decode_method": "",
+                        "contains_primera_federacion": "false",
+                        "contains_liga_regular": "false",
+                        "contains_grupo_1": "false",
+                        "contains_grupo_2": "false",
+                        "contains_segunda_division": "false",
+                        "contains_play_off": "false",
+                        "contains_codcompeticion": "false",
+                        "contains_codgrupo": "false",
+                        "sample_text": "",
+                        "notes": f"Stage 12 candidate failed: {type(e).__name__}: {e}",
+                    })
+
+        browser.close()
+
+except Exception as e:
+    rfef_stage_12_rows.append({
+        "grupo_categoria": "",
+        "response_status": "",
+        "response_length": "0",
+        "decode_method": "",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_segunda_division": "false",
+        "contains_play_off": "false",
+        "contains_codcompeticion": "false",
+        "contains_codgrupo": "false",
+        "sample_text": "",
+        "notes": f"RFEF Stage 12 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_12_wider_grupo_categoria_search.csv",
+    rfef_stage_12_fields,
+    rfef_stage_12_rows,
+)
+
+print(f"RFEF Stage 12 found {len(rfef_stage_12_rows)} promising wider grupo_categoria candidates.")
