@@ -1,0 +1,37 @@
+name: Test RFEF Extraction
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-rfef:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create export folders
+        run: |
+          mkdir -p data/exports
+
+      - name: Install browser tools
+        run: |
+          pip install playwright
+          python -m playwright install chromium
+
+      - name: Run RFEF discovery script
+        run: |
+          python scripts/rfef_discovery_runner.py
+
+      - name: Upload RFEF test outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: rfef-test-outputs
+          path: |
+            data/exports/
