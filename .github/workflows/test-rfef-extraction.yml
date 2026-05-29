@@ -25,9 +25,9 @@ jobs:
           pip install playwright
           python -m playwright install chromium
 
-      - name: Run RFEF research script
+      - name: Run RFEF research runner
         run: |
-          python scripts/rfef_research_script.py
+          python scripts/rfef_research_runner.py
 
       - name: Upload RFEF test outputs
         uses: actions/upload-artifact@v4
