@@ -3951,3 +3951,8 @@ write_csv(
 
 print(f"RFEF Research R12 extracted {len(r12_rows)} code/context rows.")
 print(f"RFEF Research R12 summarised {len(r12_summary_rows)} code pairs.")
+write_csv(
+    "primerafed_2025_26_failed_pages_audit.csv",
+    failure_audit_fields,
+    failure_audit_rows,
+)
