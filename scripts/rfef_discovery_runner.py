@@ -3266,3 +3266,278 @@ write_csv(
 
 print(f"RFEF Stage 14 extracted {len(rfef_stage_14_team_links)} Primera Federación team links.")
 print(f"RFEF Stage 14 inspected {len(rfef_stage_14_page_tests)} sample team pages.")
+# -----------------------------
+# RFEF Stage 15: inspect links/buttons/actions around Calendario y TV on team pages
+# -----------------------------
+
+rfef_stage_15_fields = [
+    "team_link_text",
+    "team_url",
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "contains_calendario",
+    "contains_tv",
+    "contains_actas",
+    "contains_resultados",
+    "contains_jornada",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "contains_codtemporada",
+    "contains_codjornada",
+    "notes",
+]
+
+rfef_stage_15_rows = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    # Read team links created by Stage 14.
+    team_links_file = EXPORT_DIR / "rfef_stage_14_primera_federacion_team_links.csv"
+
+    if not team_links_file.exists():
+        rfef_stage_15_rows.append({
+            "team_link_text": "",
+            "team_url": "",
+            "item_type": "error",
+            "label_or_text": "",
+            "href_or_action": "",
+            "contains_calendario": "false",
+            "contains_tv": "false",
+            "contains_actas": "false",
+            "contains_resultados": "false",
+            "contains_jornada": "false",
+            "contains_codcompeticion": "false",
+            "contains_codgrupo": "false",
+            "contains_codtemporada": "false",
+            "contains_codjornada": "false",
+            "notes": "Stage 14 team links file not found. Run Stage 14 first.",
+        })
+
+    else:
+        with team_links_file.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            team_links = list(reader)
+
+        # Inspect a manageable sample first.
+        sample_team_links = team_links[:12]
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+
+            for team in sample_team_links:
+                team_link_text = team.get("team_link_text", "")
+                team_url = team.get("team_url", "")
+
+                if not team_url:
+                    continue
+
+                try:
+                    page = browser.new_page(
+                        user_agent=(
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                            "Chrome/120.0.0.0 Safari/537.36"
+                        )
+                    )
+
+                    page.goto(team_url, wait_until="networkidle", timeout=60000)
+
+                    for selector in [
+                        "text=Aceptar",
+                        "text=ACEPTAR",
+                        "text=Accept",
+                        "button:has-text('Aceptar')",
+                        "button:has-text('ACEPTAR')",
+                    ]:
+                        try:
+                            if page.locator(selector).count() > 0:
+                                page.locator(selector).first.click(timeout=3000)
+                                page.wait_for_timeout(2000)
+                                break
+                        except Exception:
+                            pass
+
+                    page_html = page.content()
+                    page_text = page.inner_text("body")
+
+                    safe_team = re.sub(r"[^A-Za-z0-9]+", "_", team_link_text).strip("_").lower()[:80]
+                    if not safe_team:
+                        safe_team = team.get("team_code", "team")
+
+                    html_path = EXPORT_DIR / f"rfef_stage_15_team_page_{safe_team}.html"
+                    html_path.write_text(page_html[:700000], encoding="utf-8")
+
+                    def add_stage_15_row(item_type, label_or_text, href_or_action, notes):
+                        searchable = f"{label_or_text} {href_or_action}".lower()
+
+                        if (
+                            "calendario" in searchable
+                            or "tv" in searchable
+                            or "acta" in searchable
+                            or "resultado" in searchable
+                            or "jornada" in searchable
+                            or "codcompeticion" in searchable
+                            or "codgrupo" in searchable
+                            or "codtemporada" in searchable
+                            or "codjornada" in searchable
+                        ):
+                            rfef_stage_15_rows.append({
+                                "team_link_text": team_link_text,
+                                "team_url": team_url,
+                                "item_type": item_type,
+                                "label_or_text": label_or_text[:1500],
+                                "href_or_action": href_or_action[:2000],
+                                "contains_calendario": str("calendario" in searchable).lower(),
+                                "contains_tv": str("tv" in searchable).lower(),
+                                "contains_actas": str("acta" in searchable or "actas" in searchable).lower(),
+                                "contains_resultados": str("resultado" in searchable or "resultados" in searchable).lower(),
+                                "contains_jornada": str("jornada" in searchable).lower(),
+                                "contains_codcompeticion": str("codcompeticion" in searchable).lower(),
+                                "contains_codgrupo": str("codgrupo" in searchable).lower(),
+                                "contains_codtemporada": str("codtemporada" in searchable).lower(),
+                                "contains_codjornada": str("codjornada" in searchable).lower(),
+                                "notes": notes,
+                            })
+
+                    # 1. Extract links.
+                    links = page.locator("a")
+                    link_count = links.count()
+
+                    for i in range(link_count):
+                        try:
+                            link = links.nth(i)
+                            text = link.inner_text().strip()
+                            href = link.get_attribute("href") or ""
+                            full_href = urljoin(team_url, href)
+
+                            add_stage_15_row(
+                                "link",
+                                text,
+                                full_href,
+                                "Link extracted from Primera Federación team page.",
+                            )
+                        except Exception:
+                            pass
+
+                    # 2. Extract buttons and onclick-style elements.
+                    clickable_selectors = [
+                        "button",
+                        "[role=button]",
+                        ".btn",
+                        ".button",
+                        "[onclick]",
+                    ]
+
+                    for selector in clickable_selectors:
+                        try:
+                            elements = page.locator(selector)
+                            count = elements.count()
+
+                            for i in range(count):
+                                try:
+                                    el = elements.nth(i)
+                                    text = el.inner_text().strip()
+                                    onclick = el.get_attribute("onclick") or ""
+                                    href = el.get_attribute("href") or ""
+                                    data_href = el.get_attribute("data-href") or ""
+                                    data_url = el.get_attribute("data-url") or ""
+                                    action = onclick or href or data_href or data_url
+
+                                    add_stage_15_row(
+                                        f"clickable:{selector}",
+                                        text,
+                                        action,
+                                        "Clickable/action element extracted from Primera Federación team page.",
+                                    )
+                                except Exception:
+                                    pass
+                        except Exception:
+                            pass
+
+                    # 3. Extract HTML fragments around key words.
+                    fragments = re.split(
+                        r"[\n\r]+|</a>|</button>|</div>|</li>|</tr>|</span>|</section>",
+                        page_html,
+                    )
+
+                    for fragment in fragments:
+                        fragment_lower = fragment.lower()
+
+                        if (
+                            "calendario" in fragment_lower
+                            or "actas" in fragment_lower
+                            or "resultado" in fragment_lower
+                            or "jornada" in fragment_lower
+                            or "codcompeticion" in fragment_lower
+                            or "codgrupo" in fragment_lower
+                            or "codtemporada" in fragment_lower
+                            or "codjornada" in fragment_lower
+                        ):
+                            clean_fragment = re.sub(r"<[^>]+>", " ", fragment)
+                            clean_fragment = re.sub(r"\s+", " ", clean_fragment).strip()
+
+                            href_match = re.search(r'href=["\']([^"\']+)["\']', fragment, re.IGNORECASE)
+                            href = href_match.group(1) if href_match else ""
+                            full_href = urljoin(team_url, href) if href else ""
+
+                            onclick_match = re.search(r'onclick=["\']([^"\']+)["\']', fragment, re.IGNORECASE)
+                            onclick = onclick_match.group(1) if onclick_match else ""
+
+                            add_stage_15_row(
+                                "html_fragment",
+                                clean_fragment,
+                                full_href or onclick or fragment,
+                                "Relevant HTML fragment extracted from Primera Federación team page.",
+                            )
+
+                    page.close()
+
+                except Exception as e:
+                    rfef_stage_15_rows.append({
+                        "team_link_text": team_link_text,
+                        "team_url": team_url,
+                        "item_type": "error",
+                        "label_or_text": "",
+                        "href_or_action": "",
+                        "contains_calendario": "false",
+                        "contains_tv": "false",
+                        "contains_actas": "false",
+                        "contains_resultados": "false",
+                        "contains_jornada": "false",
+                        "contains_codcompeticion": "false",
+                        "contains_codgrupo": "false",
+                        "contains_codtemporada": "false",
+                        "contains_codjornada": "false",
+                        "notes": f"Stage 15 team page inspection failed: {type(e).__name__}: {e}",
+                    })
+
+            browser.close()
+
+except Exception as e:
+    rfef_stage_15_rows.append({
+        "team_link_text": "",
+        "team_url": "",
+        "item_type": "stage_error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "contains_calendario": "false",
+        "contains_tv": "false",
+        "contains_actas": "false",
+        "contains_resultados": "false",
+        "contains_jornada": "false",
+        "contains_codcompeticion": "false",
+        "contains_codgrupo": "false",
+        "contains_codtemporada": "false",
+        "contains_codjornada": "false",
+        "notes": f"RFEF Stage 15 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_15_team_page_calendar_actions.csv",
+    rfef_stage_15_fields,
+    rfef_stage_15_rows,
+)
+
+print(f"RFEF Stage 15 extracted {len(rfef_stage_15_rows)} team page calendar/action rows.")
