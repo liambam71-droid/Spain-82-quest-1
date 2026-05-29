@@ -892,3 +892,219 @@ write_csv(
 )
 
 print(f"RFEF Research R3 extracted {len(r3_rows)} classification code/link rows.")
+# -----------------------------
+# RFEF Research Stage R4:
+# Test discovered Primera Federación regular group result URLs
+# -----------------------------
+
+r4_fields = [
+    "group_name",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "test_url",
+    "http_status",
+    "page_loaded",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_local",
+    "contains_visitante",
+    "contains_resultado",
+    "contains_acta",
+    "sample_text",
+    "notes",
+]
+
+r4_rows = []
+
+r4_tests = [
+    {
+        "group_name": "Primera Federación Fase Regular Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "jornadas": ["1", "38"],
+    },
+    {
+        "group_name": "Primera Federación Fase Regular Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "jornadas": ["1", "38"],
+    },
+]
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for test in r4_tests:
+            for cod_jornada in test["jornadas"]:
+                test_url = (
+                    "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada"
+                    "?cod_primaria=1000120"
+                    f"&CodTemporada={test['cod_temporada']}"
+                    f"&CodJornada={cod_jornada}"
+                    f"&CodCompeticion={test['cod_competicion']}"
+                    f"&CodGrupo={test['cod_grupo']}"
+                )
+
+                try:
+                    page = browser.new_page(
+                        user_agent=(
+                            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                            "AppleWebKit/537.36 (KHTML, like Gecko) "
+                            "Chrome/120.0.0.0 Safari/537.36"
+                        )
+                    )
+
+                    response = page.goto(test_url, wait_until="networkidle", timeout=60000)
+                    status = response.status if response else ""
+
+                    for selector in [
+                        "text=Aceptar",
+                        "text=ACEPTAR",
+                        "text=Accept",
+                        "button:has-text('Aceptar')",
+                        "button:has-text('ACEPTAR')",
+                    ]:
+                        try:
+                            if page.locator(selector).count() > 0:
+                                page.locator(selector).first.click(timeout=3000)
+                                page.wait_for_timeout(2000)
+                                break
+                        except Exception:
+                            pass
+
+                    page_text = page.inner_text("body")
+                    page_html = page.content()
+
+                    page_text_lower = page_text.lower()
+                    page_html_lower = page_html.lower()
+
+                    safe_name = re.sub(
+                        r"[^A-Za-z0-9]+",
+                        "_",
+                        f"{test['group_name']}_jornada_{cod_jornada}",
+                    ).strip("_").lower()
+
+                    html_path = EXPORT_DIR / f"rfef_research_r4_{safe_name}.html"
+                    html_path.write_text(page_html[:500000], encoding="utf-8")
+
+                    sample_text = re.sub(r"\s+", " ", page_text[:5000]).strip()
+
+                    r4_rows.append({
+                        "group_name": test["group_name"],
+                        "cod_temporada": test["cod_temporada"],
+                        "cod_competicion": test["cod_competicion"],
+                        "cod_grupo": test["cod_grupo"],
+                        "cod_jornada": cod_jornada,
+                        "test_url": test_url,
+                        "http_status": str(status),
+                        "page_loaded": "true",
+                        "contains_primera_federacion": str(
+                            "primera federación" in page_text_lower
+                            or "primera federacion" in page_text_lower
+                            or "primera federación" in page_html_lower
+                            or "primera federacion" in page_html_lower
+                        ).lower(),
+                        "contains_grupo_1": str(
+                            "grupo 1" in page_text_lower
+                            or "grupo i" in page_text_lower
+                            or "grupo 1" in page_html_lower
+                            or "grupo i" in page_html_lower
+                        ).lower(),
+                        "contains_grupo_2": str(
+                            "grupo 2" in page_text_lower
+                            or "grupo ii" in page_text_lower
+                            or "grupo 2" in page_html_lower
+                            or "grupo ii" in page_html_lower
+                        ).lower(),
+                        "contains_jornada": str(
+                            "jornada" in page_text_lower
+                            or "jornada" in page_html_lower
+                        ).lower(),
+                        "contains_local": str(
+                            "local" in page_text_lower
+                            or "local" in page_html_lower
+                        ).lower(),
+                        "contains_visitante": str(
+                            "visitante" in page_text_lower
+                            or "visitante" in page_html_lower
+                        ).lower(),
+                        "contains_resultado": str(
+                            "resultado" in page_text_lower
+                            or "resultados" in page_text_lower
+                            or "resultado" in page_html_lower
+                            or "resultados" in page_html_lower
+                        ).lower(),
+                        "contains_acta": str(
+                            "acta" in page_text_lower
+                            or "actas" in page_text_lower
+                            or "acta" in page_html_lower
+                            or "actas" in page_html_lower
+                        ).lower(),
+                        "sample_text": sample_text,
+                        "notes": "Discovered Primera Federación group code tested through result URL.",
+                    })
+
+                    page.close()
+
+                except Exception as e:
+                    r4_rows.append({
+                        "group_name": test["group_name"],
+                        "cod_temporada": test["cod_temporada"],
+                        "cod_competicion": test["cod_competicion"],
+                        "cod_grupo": test["cod_grupo"],
+                        "cod_jornada": cod_jornada,
+                        "test_url": test_url,
+                        "http_status": "",
+                        "page_loaded": "false",
+                        "contains_primera_federacion": "false",
+                        "contains_grupo_1": "false",
+                        "contains_grupo_2": "false",
+                        "contains_jornada": "false",
+                        "contains_local": "false",
+                        "contains_visitante": "false",
+                        "contains_resultado": "false",
+                        "contains_acta": "false",
+                        "sample_text": "",
+                        "notes": f"R4 URL test failed: {type(e).__name__}: {e}",
+                    })
+
+        browser.close()
+
+except Exception as e:
+    r4_rows.append({
+        "group_name": "stage_error",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "test_url": "",
+        "http_status": "",
+        "page_loaded": "false",
+        "contains_primera_federacion": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_local": "false",
+        "contains_visitante": "false",
+        "contains_resultado": "false",
+        "contains_acta": "false",
+        "sample_text": "",
+        "notes": f"RFEF Research R4 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r4_discovered_group_url_tests.csv",
+    r4_fields,
+    r4_rows,
+)
+
+print(f"RFEF Research R4 tested {len(r4_rows)} discovered group URLs.")
