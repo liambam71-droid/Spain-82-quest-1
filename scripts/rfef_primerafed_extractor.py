@@ -768,3 +768,128 @@ write_csv(
 print(f"Clean Primera Federación extractor produced {len(fixture_rows)} fixture rows.")
 print(f"Clean Primera Federación extractor produced {len(team_index_rows)} team fixture rows.")
 print(f"Failed raw rows: {len(failed_raw_rows)}")
+# -----------------------------
+# Failure audit: inspect failed Primera Federación pages
+# -----------------------------
+
+failure_audit_fields = [
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "expected_text_file",
+    "text_file_exists",
+    "text_length",
+    "first_120_lines",
+    "contains_primera_federacion",
+    "contains_jornada",
+    "contains_resultados",
+    "contains_no_data",
+    "notes",
+]
+
+failure_audit_rows = []
+
+try:
+    failed_pages = [
+        row for row in raw_rows
+        if row.get("data_confidence") == "failed"
+    ]
+
+    for row in failed_pages:
+        competition_group = row.get("competition_group", "")
+        cod_jornada = row.get("cod_jornada", "")
+
+        safe_name = re.sub(
+            r"[^A-Za-z0-9]+",
+            "_",
+            f"{competition_group}_jornada_{cod_jornada}",
+        ).strip("_").lower()
+
+        text_filename = f"primerafed_extract_{safe_name}_text.txt"
+        text_path = EXPORT_DIR / text_filename
+
+        text_exists = text_path.exists()
+        page_text = ""
+
+        if text_exists:
+            page_text = text_path.read_text(encoding="utf-8", errors="ignore")
+
+        page_text_lower = page_text.lower()
+
+        lines = [
+            re.sub(r"\s+", " ", line).strip()
+            for line in page_text.splitlines()
+            if re.sub(r"\s+", " ", line).strip()
+        ]
+
+        first_120_lines = " | ".join(lines[:120])
+
+        contains_no_data = (
+            "no hay datos" in page_text_lower
+            or "sin datos" in page_text_lower
+            or "no existen" in page_text_lower
+            or "no se encontraron" in page_text_lower
+            or "no se han encontrado" in page_text_lower
+            or "no existen registros" in page_text_lower
+        )
+
+        failure_audit_rows.append({
+            "competition_group": competition_group,
+            "cod_temporada": row.get("cod_temporada", ""),
+            "cod_competicion": row.get("cod_competicion", ""),
+            "cod_grupo": row.get("cod_grupo", ""),
+            "cod_jornada": cod_jornada,
+            "expected_text_file": text_filename,
+            "text_file_exists": str(text_exists).lower(),
+            "text_length": str(len(page_text)),
+            "first_120_lines": first_120_lines[:8000],
+            "contains_primera_federacion": str(
+                "primera federación" in page_text_lower
+                or "primera federacion" in page_text_lower
+                or "primera federaci" in page_text_lower
+            ).lower(),
+            "contains_jornada": str("jornada" in page_text_lower).lower(),
+            "contains_resultados": str(
+                "resultado" in page_text_lower
+                or "resultados" in page_text_lower
+            ).lower(),
+            "contains_no_data": str(contains_no_data).lower(),
+            "notes": row.get("notes", ""),
+        })
+
+except Exception as e:
+    failure_audit_rows.append({
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "expected_text_file": "",
+        "text_file_exists": "false",
+        "text_length": "0",
+        "first_120_lines": "",
+        "contains_primera_federacion": "false",
+        "contains_jornada": "false",
+        "contains_resultados": "false",
+        "contains_no_data": "false",
+        "notes": f"Failure audit failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "primerafed_2025_26_failed_pages_audit.csv",
+    failure_audit_fields,
+    failure_audit_rows,
+)
+
+# Also write a root-level copy so it is easy to find in the GitHub artifact.
+root_audit_path = Path("primerafed_2025_26_failed_pages_audit.csv")
+
+with root_audit_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=failure_audit_fields)
+    writer.writeheader()
+    writer.writerows(failure_audit_rows)
+
+print("Created failed pages audit: primerafed_2025_26_failed_pages_audit.csv")
+
