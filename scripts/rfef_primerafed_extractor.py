@@ -892,4 +892,151 @@ with root_audit_path.open("w", newline="", encoding="utf-8") as f:
     writer.writerows(failure_audit_rows)
 
 print("Created failed pages audit: primerafed_2025_26_failed_pages_audit.csv")
+# -----------------------------
+# HTML failure audit: inspect failed Primera Federación page HTML
+# -----------------------------
 
+html_failure_audit_fields = [
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "expected_html_file",
+    "html_file_exists",
+    "html_length",
+    "first_html_fragment",
+    "contains_cookie_message",
+    "contains_no_cookie",
+    "contains_primera_federacion",
+    "contains_jornada",
+    "contains_resultados",
+    "contains_body",
+    "contains_script",
+    "contains_iframe",
+    "contains_no_data",
+    "notes",
+]
+
+html_failure_audit_rows = []
+
+try:
+    failed_pages = [
+        row for row in raw_rows
+        if row.get("data_confidence") == "failed"
+    ]
+
+    for row in failed_pages:
+        competition_group = row.get("competition_group", "")
+        cod_jornada = row.get("cod_jornada", "")
+
+        safe_name = re.sub(
+            r"[^A-Za-z0-9]+",
+            "_",
+            f"{competition_group}_jornada_{cod_jornada}",
+        ).strip("_").lower()
+
+        html_filename = f"primerafed_extract_{safe_name}.html"
+        html_path = EXPORT_DIR / html_filename
+
+        html_exists = html_path.exists()
+        page_html = ""
+
+        if html_exists:
+            page_html = html_path.read_text(encoding="utf-8", errors="ignore")
+
+        html_lower = page_html.lower()
+
+        first_html_fragment = re.sub(r"\s+", " ", page_html[:8000]).strip()
+
+        contains_cookie_message = (
+            "no se ha aceptado el cookie" in html_lower
+            or "no se ha aceptado la cookie" in html_lower
+            or "aceptar cookies" in html_lower
+            or "aceptar cookie" in html_lower
+        )
+
+        contains_no_cookie = (
+            "cookie" in html_lower
+            and (
+                "no se ha aceptado" in html_lower
+                or "aceptar" in html_lower
+            )
+        )
+
+        contains_no_data = (
+            "no hay datos" in html_lower
+            or "sin datos" in html_lower
+            or "no existen" in html_lower
+            or "no se encontraron" in html_lower
+            or "no se han encontrado" in html_lower
+            or "no existen registros" in html_lower
+        )
+
+        html_failure_audit_rows.append({
+            "competition_group": competition_group,
+            "cod_temporada": row.get("cod_temporada", ""),
+            "cod_competicion": row.get("cod_competicion", ""),
+            "cod_grupo": row.get("cod_grupo", ""),
+            "cod_jornada": cod_jornada,
+            "expected_html_file": html_filename,
+            "html_file_exists": str(html_exists).lower(),
+            "html_length": str(len(page_html)),
+            "first_html_fragment": first_html_fragment[:8000],
+            "contains_cookie_message": str(contains_cookie_message).lower(),
+            "contains_no_cookie": str(contains_no_cookie).lower(),
+            "contains_primera_federacion": str(
+                "primera federación" in html_lower
+                or "primera federacion" in html_lower
+                or "primera federaci" in html_lower
+            ).lower(),
+            "contains_jornada": str("jornada" in html_lower).lower(),
+            "contains_resultados": str(
+                "resultado" in html_lower
+                or "resultados" in html_lower
+            ).lower(),
+            "contains_body": str("<body" in html_lower).lower(),
+            "contains_script": str("<script" in html_lower).lower(),
+            "contains_iframe": str("<iframe" in html_lower).lower(),
+            "contains_no_data": str(contains_no_data).lower(),
+            "notes": row.get("notes", ""),
+        })
+
+except Exception as e:
+    html_failure_audit_rows.append({
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "expected_html_file": "",
+        "html_file_exists": "false",
+        "html_length": "0",
+        "first_html_fragment": "",
+        "contains_cookie_message": "false",
+        "contains_no_cookie": "false",
+        "contains_primera_federacion": "false",
+        "contains_jornada": "false",
+        "contains_resultados": "false",
+        "contains_body": "false",
+        "contains_script": "false",
+        "contains_iframe": "false",
+        "contains_no_data": "false",
+        "notes": f"HTML failure audit failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "primerafed_2025_26_failed_pages_html_audit.csv",
+    html_failure_audit_fields,
+    html_failure_audit_rows,
+)
+
+# Also write a root-level copy so it is easy to find in the GitHub artifact.
+root_html_audit_path = Path("primerafed_2025_26_failed_pages_html_audit.csv")
+
+with root_html_audit_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=html_failure_audit_fields)
+    writer.writeheader()
+    writer.writerows(html_failure_audit_rows)
+
+print("Created HTML failed pages audit: primerafed_2025_26_failed_pages_html_audit.csv")
