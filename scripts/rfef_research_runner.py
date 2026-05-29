@@ -3534,3 +3534,420 @@ write_csv(
 )
 
 print(f"RFEF Research R11 produced {len(r11_rows)} rows.")
+# RFEF Research Stage R12:
+# Extract every competition/group/season code pair from the R2 classification response
+# -----------------------------
+
+r12_fields = [
+    "row_type",
+    "nearby_label",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "contains_primera_federacion",
+    "contains_fase_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_play_off",
+    "contains_segunda",
+    "route_hint",
+    "raw_context",
+    "notes",
+]
+
+r12_rows = []
+
+
+def r12_extract_all_codes(context):
+    patterns = {
+        "cod_temporada": [
+            r"CodTemporada=([0-9]+)",
+            r"codtemporada=([0-9]+)",
+            r"CodTemporada['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codtemporada['\" ]*[:=]['\" ]*([0-9]+)",
+        ],
+        "cod_competicion": [
+            r"CodCompeticion=([0-9]+)",
+            r"codcompeticion=([0-9]+)",
+            r"CodCompeticion['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codcompeticion['\" ]*[:=]['\" ]*([0-9]+)",
+        ],
+        "cod_grupo": [
+            r"CodGrupo=([0-9]+)",
+            r"codgrupo=([0-9]+)",
+            r"CodGrupo['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codgrupo['\" ]*[:=]['\" ]*([0-9]+)",
+        ],
+        "cod_jornada": [
+            r"CodJornada=([0-9]+)",
+            r"codjornada=([0-9]+)",
+            r"CodJornada['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codjornada['\" ]*[:=]['\" ]*([0-9]+)",
+        ],
+    }
+
+    extracted = {}
+
+    for key, pattern_list in patterns.items():
+        values = []
+        for pattern in pattern_list:
+            values.extend(re.findall(pattern, context, re.IGNORECASE))
+        extracted[key] = sorted(set(values))
+
+    return extracted
+
+
+def r12_flags(text):
+    lower = text.lower()
+
+    return {
+        "contains_primera_federacion": str(
+            "primera federación" in lower
+            or "primera federacion" in lower
+            or "primera federaci" in lower
+        ).lower(),
+        "contains_fase_regular": str(
+            "fase regular" in lower
+            or "liga regular" in lower
+        ).lower(),
+        "contains_grupo_1": str(
+            "grupo 1" in lower
+            or "grupo i" in lower
+        ).lower(),
+        "contains_grupo_2": str(
+            "grupo 2" in lower
+            or "grupo ii" in lower
+        ).lower(),
+        "contains_play_off": str(
+            "play off" in lower
+            or "play-off" in lower
+            or "playoff" in lower
+        ).lower(),
+        "contains_segunda": str(
+            "segunda división" in lower
+            or "segunda division" in lower
+            or "hypermotion" in lower
+        ).lower(),
+    }
+
+
+def r12_route_hint(text):
+    lower = text.lower()
+    hints = []
+
+    for token in [
+        "nfg_cmpjornada",
+        "nfg_viscalendario_vis",
+        "nfg_viscalendario",
+        "nfg_visclasificacion",
+        "nfg_cmpacta",
+        "nfg_visacta",
+        "calendario",
+        "jornada",
+        "resultados",
+        "clasificacion",
+        "clasificación",
+    ]:
+        if token in lower:
+            hints.append(token)
+
+    return "|".join(hints)
+
+
+try:
+    response_file = EXPORT_DIR / "rfef_research_r2_football_masculino_femenino_clasificacion_exact_button.html"
+
+    if not response_file.exists():
+        r12_rows.append({
+            "row_type": "error",
+            "nearby_label": "",
+            "cod_temporada": "",
+            "cod_competicion": "",
+            "cod_grupo": "",
+            "cod_jornada": "",
+            "contains_primera_federacion": "false",
+            "contains_fase_regular": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_play_off": "false",
+            "contains_segunda": "false",
+            "route_hint": "",
+            "raw_context": "",
+            "notes": "Expected R2 classification response HTML file not found. Run R2 first.",
+        })
+
+    else:
+        html = response_file.read_text(encoding="utf-8", errors="ignore")
+
+        # Break into useful chunks around links/buttons/divs.
+        fragments = re.split(
+            r"[\n\r]+|</a>|</button>|</div>|</li>|</tr>|</span>|</section>",
+            html,
+        )
+
+        seen = set()
+
+        for fragment in fragments:
+            fragment_lower = fragment.lower()
+
+            has_relevant_text = (
+                "primera federaci" in fragment_lower
+                or "fase regular" in fragment_lower
+                or "liga regular" in fragment_lower
+                or "grupo 1" in fragment_lower
+                or "grupo 2" in fragment_lower
+                or "grupo i" in fragment_lower
+                or "grupo ii" in fragment_lower
+                or "codcompeticion" in fragment_lower
+                or "codgrupo" in fragment_lower
+                or "codtemporada" in fragment_lower
+                or "nfg_" in fragment_lower
+            )
+
+            if not has_relevant_text:
+                continue
+
+            cleaned = re.sub(r"<[^>]+>", " ", fragment)
+            cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
+            codes = r12_extract_all_codes(fragment)
+            flags = r12_flags(fragment)
+
+            # If a fragment has multiple values, output all combinations.
+            temporadas = codes["cod_temporada"] or [""]
+            competiciones = codes["cod_competicion"] or [""]
+            grupos = codes["cod_grupo"] or [""]
+            jornadas = codes["cod_jornada"] or [""]
+
+            for temporada in temporadas:
+                for competicion in competiciones:
+                    for grupo in grupos:
+                        for jornada in jornadas:
+                            key = (
+                                cleaned[:300],
+                                temporada,
+                                competicion,
+                                grupo,
+                                jornada,
+                                r12_route_hint(fragment),
+                            )
+
+                            if key in seen:
+                                continue
+
+                            seen.add(key)
+
+                            r12_rows.append({
+                                "row_type": "fragment",
+                                "nearby_label": cleaned[:1500],
+                                "cod_temporada": temporada,
+                                "cod_competicion": competicion,
+                                "cod_grupo": grupo,
+                                "cod_jornada": jornada,
+                                **flags,
+                                "route_hint": r12_route_hint(fragment),
+                                "raw_context": fragment[:3000],
+                                "notes": "Code/context fragment extracted from R2 classification response.",
+                            })
+
+        # Also create context windows around every occurrence of CodCompeticion/CodGrupo values.
+        search_terms = [
+            "CodCompeticion",
+            "codcompeticion",
+            "CodGrupo",
+            "codgrupo",
+            "CodTemporada",
+            "codtemporada",
+            "23289295",
+            "23289296",
+            "23289297",
+        ]
+
+        for term in search_terms:
+            lower_html = html.lower()
+            lower_term = term.lower()
+            start = 0
+
+            while True:
+                index = lower_html.find(lower_term, start)
+
+                if index == -1:
+                    break
+
+                context_start = max(index - 1500, 0)
+                context_end = min(index + 2500, len(html))
+                context = html[context_start:context_end]
+
+                cleaned = re.sub(r"<[^>]+>", " ", context)
+                cleaned = re.sub(r"\s+", " ", cleaned).strip()
+
+                codes = r12_extract_all_codes(context)
+                flags = r12_flags(context)
+
+                temporadas = codes["cod_temporada"] or [""]
+                competiciones = codes["cod_competicion"] or [""]
+                grupos = codes["cod_grupo"] or [""]
+                jornadas = codes["cod_jornada"] or [""]
+
+                for temporada in temporadas:
+                    for competicion in competiciones:
+                        for grupo in grupos:
+                            for jornada in jornadas:
+                                key = (
+                                    "context",
+                                    term,
+                                    temporada,
+                                    competicion,
+                                    grupo,
+                                    jornada,
+                                    cleaned[:200],
+                                )
+
+                                if key in seen:
+                                    continue
+
+                                seen.add(key)
+
+                                r12_rows.append({
+                                    "row_type": "context_window",
+                                    "nearby_label": cleaned[:1500],
+                                    "cod_temporada": temporada,
+                                    "cod_competicion": competicion,
+                                    "cod_grupo": grupo,
+                                    "cod_jornada": jornada,
+                                    **flags,
+                                    "route_hint": r12_route_hint(context),
+                                    "raw_context": context[:4000],
+                                    "notes": f"Context window around term: {term}",
+                                })
+
+                start = index + len(lower_term)
+
+except Exception as e:
+    r12_rows.append({
+        "row_type": "error",
+        "nearby_label": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "contains_primera_federacion": "false",
+        "contains_fase_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_play_off": "false",
+        "contains_segunda": "false",
+        "route_hint": "",
+        "raw_context": "",
+        "notes": f"RFEF Research R12 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r12_all_classification_code_pairs.csv",
+    r12_fields,
+    r12_rows,
+)
+
+# Create deduped code-pair summary
+r12_summary_fields = [
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "occurrences",
+    "contains_primera_federacion",
+    "contains_fase_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_play_off",
+    "contains_segunda",
+    "route_hints",
+    "best_label",
+]
+
+summary = {}
+
+for row in r12_rows:
+    key = (
+        row.get("cod_temporada", ""),
+        row.get("cod_competicion", ""),
+        row.get("cod_grupo", ""),
+        row.get("cod_jornada", ""),
+    )
+
+    if not any(key):
+        continue
+
+    if key not in summary:
+        summary[key] = {
+            "cod_temporada": key[0],
+            "cod_competicion": key[1],
+            "cod_grupo": key[2],
+            "cod_jornada": key[3],
+            "occurrences": 0,
+            "contains_primera_federacion": "false",
+            "contains_fase_regular": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_play_off": "false",
+            "contains_segunda": "false",
+            "route_hints": set(),
+            "best_label": "",
+        }
+
+    summary[key]["occurrences"] += 1
+
+    for flag in [
+        "contains_primera_federacion",
+        "contains_fase_regular",
+        "contains_grupo_1",
+        "contains_grupo_2",
+        "contains_play_off",
+        "contains_segunda",
+    ]:
+        if row.get(flag) == "true":
+            summary[key][flag] = "true"
+
+    if row.get("route_hint"):
+        summary[key]["route_hints"].add(row.get("route_hint"))
+
+    if len(row.get("nearby_label", "")) > len(summary[key]["best_label"]):
+        summary[key]["best_label"] = row.get("nearby_label", "")
+
+r12_summary_rows = []
+
+for item in summary.values():
+    r12_summary_rows.append({
+        "cod_temporada": item["cod_temporada"],
+        "cod_competicion": item["cod_competicion"],
+        "cod_grupo": item["cod_grupo"],
+        "cod_jornada": item["cod_jornada"],
+        "occurrences": str(item["occurrences"]),
+        "contains_primera_federacion": item["contains_primera_federacion"],
+        "contains_fase_regular": item["contains_fase_regular"],
+        "contains_grupo_1": item["contains_grupo_1"],
+        "contains_grupo_2": item["contains_grupo_2"],
+        "contains_play_off": item["contains_play_off"],
+        "contains_segunda": item["contains_segunda"],
+        "route_hints": "|".join(sorted(item["route_hints"])),
+        "best_label": item["best_label"][:2000],
+    })
+
+r12_summary_rows = sorted(
+    r12_summary_rows,
+    key=lambda row: (
+        row["cod_competicion"],
+        row["cod_grupo"],
+        row["cod_jornada"],
+    ),
+)
+
+write_csv(
+    "rfef_research_r12_code_pair_summary.csv",
+    r12_summary_fields,
+    r12_summary_rows,
+)
+
+print(f"RFEF Research R12 extracted {len(r12_rows)} code/context rows.")
+print(f"RFEF Research R12 summarised {len(r12_summary_rows)} code pairs.")
