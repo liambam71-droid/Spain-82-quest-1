@@ -2489,3 +2489,352 @@ write_csv(
 )
 
 print(f"RFEF Research R8 produced {len(r8_rows)} diagnostic rows.")
+# -----------------------------
+# RFEF Research Stage R9:
+# Extract exact jornada/calendar/result actions from R2 classification response
+# -----------------------------
+
+r9_fields = [
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "contains_primera_federacion",
+    "contains_fase_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_calendario",
+    "contains_jornada",
+    "contains_resultado",
+    "route_hint",
+    "notes",
+]
+
+r9_rows = []
+
+
+def r9_extract_code(text, code_name):
+    patterns = {
+        "cod_temporada": [
+            r"CodTemporada=([0-9]+)",
+            r"codtemporada=([0-9]+)",
+            r"CodTemporada['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codtemporada['\" ]*[:=]['\" ]*([0-9]+)",
+            r"CodTemporada\\?['\" ]*[:,]\\?['\" ]*([0-9]+)",
+        ],
+        "cod_competicion": [
+            r"CodCompeticion=([0-9]+)",
+            r"codcompeticion=([0-9]+)",
+            r"CodCompeticion['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codcompeticion['\" ]*[:=]['\" ]*([0-9]+)",
+            r"CodCompeticion\\?['\" ]*[:,]\\?['\" ]*([0-9]+)",
+        ],
+        "cod_grupo": [
+            r"CodGrupo=([0-9]+)",
+            r"codgrupo=([0-9]+)",
+            r"CodGrupo['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codgrupo['\" ]*[:=]['\" ]*([0-9]+)",
+            r"CodGrupo\\?['\" ]*[:,]\\?['\" ]*([0-9]+)",
+        ],
+        "cod_jornada": [
+            r"CodJornada=([0-9]+)",
+            r"codjornada=([0-9]+)",
+            r"CodJornada['\" ]*[:=]['\" ]*([0-9]+)",
+            r"codjornada['\" ]*[:=]['\" ]*([0-9]+)",
+            r"CodJornada\\?['\" ]*[:,]\\?['\" ]*([0-9]+)",
+        ],
+    }
+
+    for pattern in patterns[code_name]:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+
+    return ""
+
+
+def r9_flags(text):
+    lower = text.lower()
+
+    return {
+        "contains_primera_federacion": str(
+            "primera federación" in lower
+            or "primera federacion" in lower
+            or "primera federaci" in lower
+        ).lower(),
+        "contains_fase_regular": str(
+            "fase regular" in lower
+            or "liga regular" in lower
+        ).lower(),
+        "contains_grupo_1": str(
+            "grupo 1" in lower
+            or "grupo i" in lower
+        ).lower(),
+        "contains_grupo_2": str(
+            "grupo 2" in lower
+            or "grupo ii" in lower
+        ).lower(),
+        "contains_calendario": str("calendario" in lower).lower(),
+        "contains_jornada": str("jornada" in lower).lower(),
+        "contains_resultado": str(
+            "resultado" in lower
+            or "resultados" in lower
+        ).lower(),
+    }
+
+
+def r9_route_hint(text):
+    lower = text.lower()
+
+    hints = []
+
+    for token in [
+        "nfg_cmpjornada",
+        "nfg_viscalendario_vis",
+        "nfg_viscalendario",
+        "nfg_visclasificacion",
+        "nfg_cmpacta",
+        "nfg_visacta",
+        "nfg_cmp",
+        "jornada",
+        "calendario",
+        "resultados",
+    ]:
+        if token in lower:
+            hints.append(token)
+
+    return "|".join(hints)
+
+
+try:
+    response_file = EXPORT_DIR / "rfef_research_r2_football_masculino_femenino_clasificacion_exact_button.html"
+
+    if not response_file.exists():
+        r9_rows.append({
+            "item_type": "error",
+            "label_or_text": "",
+            "href_or_action": "",
+            "cod_temporada": "",
+            "cod_competicion": "",
+            "cod_grupo": "",
+            "cod_jornada": "",
+            "contains_primera_federacion": "false",
+            "contains_fase_regular": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_calendario": "false",
+            "contains_jornada": "false",
+            "contains_resultado": "false",
+            "route_hint": "",
+            "notes": "Expected R2 classification response HTML file not found. Run R2 first.",
+        })
+
+    else:
+        html = response_file.read_text(encoding="utf-8", errors="ignore")
+
+        plain_text = re.sub(r"<[^>]+>", " ", html)
+        plain_text = re.sub(r"\s+", " ", plain_text).strip()
+
+        (EXPORT_DIR / "rfef_research_r9_classification_plain_text.txt").write_text(
+            plain_text[:700000],
+            encoding="utf-8",
+        )
+
+        # 1. Links
+        link_matches = re.findall(
+            r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for href, raw_text in link_matches:
+            label = re.sub(r"<[^>]+>", " ", raw_text)
+            label = re.sub(r"\s+", " ", label).strip()
+            combined = f"{label} {href}"
+
+            lower = combined.lower()
+
+            if (
+                "primera federaci" in lower
+                or "fase regular" in lower
+                or "liga regular" in lower
+                or "grupo 1" in lower
+                or "grupo 2" in lower
+                or "grupo i" in lower
+                or "grupo ii" in lower
+                or "calendario" in lower
+                or "jornada" in lower
+                or "resultado" in lower
+                or "codcompeticion" in lower
+                or "codgrupo" in lower
+                or "codtemporada" in lower
+                or "nfg_" in lower
+            ):
+                flags = r9_flags(combined)
+
+                r9_rows.append({
+                    "item_type": "link",
+                    "label_or_text": label[:2000],
+                    "href_or_action": href[:3000],
+                    "cod_temporada": r9_extract_code(combined, "cod_temporada"),
+                    "cod_competicion": r9_extract_code(combined, "cod_competicion"),
+                    "cod_grupo": r9_extract_code(combined, "cod_grupo"),
+                    "cod_jornada": r9_extract_code(combined, "cod_jornada"),
+                    **flags,
+                    "route_hint": r9_route_hint(combined),
+                    "notes": "Link extracted from R2 classification response.",
+                })
+
+        # 2. Onclicks and data/action attributes
+        attr_matches = []
+
+        for attr_name in ["onclick", "data-url", "data-href", "href", "action"]:
+            attr_matches.extend([
+                (attr_name, value)
+                for value in re.findall(
+                    rf'{attr_name}=["\']([^"\']+)["\']',
+                    html,
+                    re.IGNORECASE | re.DOTALL,
+                )
+            ])
+
+        for attr_name, value in attr_matches:
+            combined = value
+            lower = combined.lower()
+
+            if (
+                "primera federaci" in lower
+                or "fase regular" in lower
+                or "liga regular" in lower
+                or "grupo 1" in lower
+                or "grupo 2" in lower
+                or "grupo i" in lower
+                or "grupo ii" in lower
+                or "calendario" in lower
+                or "jornada" in lower
+                or "resultado" in lower
+                or "codcompeticion" in lower
+                or "codgrupo" in lower
+                or "codtemporada" in lower
+                or "nfg_" in lower
+            ):
+                flags = r9_flags(combined)
+
+                r9_rows.append({
+                    "item_type": f"attribute:{attr_name}",
+                    "label_or_text": "",
+                    "href_or_action": value[:3000],
+                    "cod_temporada": r9_extract_code(combined, "cod_temporada"),
+                    "cod_competicion": r9_extract_code(combined, "cod_competicion"),
+                    "cod_grupo": r9_extract_code(combined, "cod_grupo"),
+                    "cod_jornada": r9_extract_code(combined, "cod_jornada"),
+                    **flags,
+                    "route_hint": r9_route_hint(combined),
+                    "notes": f"{attr_name} attribute extracted from R2 classification response.",
+                })
+
+        # 3. Context windows around the two discovered group codes and route names.
+        search_terms = [
+            "23289295",
+            "23289296",
+            "23289297",
+            "CodCompeticion",
+            "CodGrupo",
+            "CodTemporada",
+            "NFG_CmpJornada",
+            "NFG_VisCalendario",
+            "Calendario",
+            "Jornada",
+            "Grupo 1",
+            "Grupo 2",
+            "Fase Regular",
+            "Primera Federación",
+        ]
+
+        for term in search_terms:
+            lower_html = html.lower()
+            lower_term = term.lower()
+            start = 0
+
+            while True:
+                index = lower_html.find(lower_term, start)
+
+                if index == -1:
+                    break
+
+                context_start = max(index - 1200, 0)
+                context_end = min(index + 1800, len(html))
+                fragment = html[context_start:context_end]
+
+                label = re.sub(r"<[^>]+>", " ", fragment)
+                label = re.sub(r"\s+", " ", label).strip()
+
+                flags = r9_flags(fragment)
+
+                r9_rows.append({
+                    "item_type": "context_window",
+                    "label_or_text": label[:2500],
+                    "href_or_action": fragment[:3500],
+                    "cod_temporada": r9_extract_code(fragment, "cod_temporada"),
+                    "cod_competicion": r9_extract_code(fragment, "cod_competicion"),
+                    "cod_grupo": r9_extract_code(fragment, "cod_grupo"),
+                    "cod_jornada": r9_extract_code(fragment, "cod_jornada"),
+                    **flags,
+                    "route_hint": r9_route_hint(fragment),
+                    "notes": f"Context window around term: {term}",
+                })
+
+                start = index + len(lower_term)
+
+        # 4. Deduplicate rough exact duplicates.
+        seen = set()
+        deduped = []
+
+        for row in r9_rows:
+            key = (
+                row.get("item_type", ""),
+                row.get("href_or_action", "")[:500],
+                row.get("cod_temporada", ""),
+                row.get("cod_competicion", ""),
+                row.get("cod_grupo", ""),
+                row.get("cod_jornada", ""),
+            )
+
+            if key in seen:
+                continue
+
+            seen.add(key)
+            deduped.append(row)
+
+        r9_rows = deduped
+
+except Exception as e:
+    r9_rows.append({
+        "item_type": "error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "contains_primera_federacion": "false",
+        "contains_fase_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_calendario": "false",
+        "contains_jornada": "false",
+        "contains_resultado": "false",
+        "route_hint": "",
+        "notes": f"RFEF Research R9 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r9_exact_jornada_calendar_actions.csv",
+    r9_fields,
+    r9_rows,
+)
+
+print(f"RFEF Research R9 extracted {len(r9_rows)} exact jornada/calendar action candidates.")
