@@ -671,3 +671,59 @@ write_csv(
 )
 
 print(f"RFEF Research R2 tested {len(r2_rows)} exact payloads.")
+# -----------------------------
+# RFEF Research Stage R3:
+# Parse exact classification payload response for Primera Federación regular group codes
+# -----------------------------
+
+r3_fields = [
+    "item_type",
+    "label_or_text",
+    "href_or_action",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "contains_codtemporada",
+    "notes",
+]
+
+r3_rows = []
+
+
+def r3_extract_code(text, patterns):
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+r3_patterns = {
+    "cod_temporada": [
+        r"CodTemporada=([0-9]+)",
+        r"codtemporada=([0-9]+)",
+        r"CodTemporada['\" ]*[:=]['\" ]*([0-9]+)",
+        r"codtemporada['\" ]*[:=]['\" ]*([0-9]+)",
+    ],
+    "cod_competicion": [
+        r"CodCompeticion=([0-9]+)",
+        r"codcompeticion=([0-9]+)",
+        r"CodCompeticion['\" ]*[:=]['\" ]*([0-9]+)",
+        r"codcompeticion['\" ]*[:=]['\" ]*([0-9]+)",
+    ],
+    "cod_grupo": [
+        r"CodGrupo=([0-9]+)",
+        r"codgrupo=([0-9]+)",
+        r"CodGrupo['\" ]*[:=]['\" ]*([0-9]+)",
+        r"codgrupo['\" ]*[:=]['\" ]*([0-9]+)",
+    ],
+}
+
+try:
+    response_file = EXPORT_DIR / "
