@@ -1450,3 +1450,320 @@ write_csv(
 )
 
 print(f"RFEF Research R5 extracted {len(r5_rows)} raw candidate rows.")
+# -----------------------------
+# RFEF Research Stage R6:
+# Parse saved R5 Jornada 1 page text into structured fixture rows
+# -----------------------------
+
+r6_fields = [
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "fixture_index",
+    "home_team_name_source",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "fixture_date",
+    "kickoff_time_local",
+    "venue_name_source",
+    "referee",
+    "raw_sequence",
+    "data_confidence",
+    "notes",
+]
+
+r6_rows = []
+
+r6_sources = [
+    {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "cod_jornada": "1",
+        "text_file": "rfef_research_r5_grupo_1_jornada_1_text.txt",
+    },
+    {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "cod_jornada": "1",
+        "text_file": "rfef_research_r5_grupo_2_jornada_1_text.txt",
+    },
+]
+
+
+def r6_is_date(value):
+    return bool(re.match(r"^[0-9]{2}-[0-9]{2}-[0-9]{4}$", value.strip()))
+
+
+def r6_is_time(value):
+    return bool(re.match(r"^[0-9]{1,2}:[0-9]{2}$", value.strip()))
+
+
+def r6_is_score_marker(value):
+    value = value.strip()
+    return bool(
+        value == "-"
+        or re.match(r"^[0-9]{1,2}\s*-\s*[0-9]{1,2}$", value)
+        or re.match(r"^[0-9]{1,2}\s*-$", value)
+        or re.match(r"^-\s*[0-9]{1,2}$", value)
+    )
+
+
+def r6_parse_score(value):
+    value = value.strip()
+
+    if value == "-":
+        return "", ""
+
+    match = re.match(r"^([0-9]{1,2})\s*-\s*([0-9]{1,2})$", value)
+    if match:
+        return match.group(1), match.group(2)
+
+    match = re.match(r"^([0-9]{1,2})\s*-$", value)
+    if match:
+        return match.group(1), ""
+
+    match = re.match(r"^-\s*([0-9]{1,2})$", value)
+    if match:
+        return "", match.group(1)
+
+    return "", ""
+
+
+def r6_clean_lines(text):
+    lines = []
+
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+
+        if not cleaned:
+            continue
+
+        # Remove obvious page furniture.
+        skip_values = {
+            "Competiciones",
+            "Acciones",
+            "Calendario Clasificaciones y Resultados Búsqueda por competición",
+            "Filtro de búsqueda Avanzado",
+            "Siguiente",
+            "Anterior",
+            "Provisional Definitivo",
+            "RESULTADOS",
+            "Calendario Clasificación Tabla Cruzada Goleadores Porteros",
+        }
+
+        if cleaned in skip_values:
+            continue
+
+        if cleaned.startswith("Temporada "):
+            continue
+
+        if cleaned.startswith("Campeonato Nacional de Liga de Primera Federación"):
+            continue
+
+        if cleaned.startswith("Jornada "):
+            continue
+
+        lines.append(cleaned)
+
+    return lines
+
+
+def r6_parse_fixtures_from_lines(lines):
+    fixtures = []
+    i = 0
+
+    while i < len(lines):
+        # Look for pattern:
+        # home_team, score_marker, date, time, away_team, venue, Árbitro:, referee
+        if i + 5 < len(lines):
+            home = lines[i]
+            score_marker = lines[i + 1]
+            date_value = lines[i + 2]
+            time_value = lines[i + 3]
+            away = lines[i + 4]
+            venue = lines[i + 5]
+
+            if (
+                r6_is_score_marker(score_marker)
+                and r6_is_date(date_value)
+                and r6_is_time(time_value)
+                and home.lower() != "árbitro:"
+                and away.lower() != "árbitro:"
+            ):
+                home_score, away_score = r6_parse_score(score_marker)
+
+                referee = ""
+                consumed = 6
+
+                if i + 7 < len(lines) and lines[i + 6].lower().startswith("árbitro"):
+                    referee = lines[i + 7]
+                    consumed = 8
+
+                fixtures.append({
+                    "home_team_name_source": home,
+                    "away_team_name_source": away,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "fixture_date": date_value,
+                    "kickoff_time_local": time_value,
+                    "venue_name_source": venue,
+                    "referee": referee,
+                    "raw_sequence": " | ".join(lines[i:i + consumed]),
+                    "data_confidence": "high" if home and away and date_value and time_value else "needs_review",
+                    "notes": "Parsed from RFEF saved visible text sequence.",
+                })
+
+                i += consumed
+                continue
+
+        i += 1
+
+    return fixtures
+
+
+try:
+    for source in r6_sources:
+        text_path = EXPORT_DIR / source["text_file"]
+
+        if not text_path.exists():
+            r6_rows.append({
+                "season_id": source["season_id"],
+                "competition_id": source["competition_id"],
+                "competition_name": source["competition_name"],
+                "competition_group": source["competition_group"],
+                "cod_temporada": source["cod_temporada"],
+                "cod_competicion": source["cod_competicion"],
+                "cod_grupo": source["cod_grupo"],
+                "cod_jornada": source["cod_jornada"],
+                "fixture_index": "",
+                "home_team_name_source": "",
+                "away_team_name_source": "",
+                "home_score": "",
+                "away_score": "",
+                "fixture_date": "",
+                "kickoff_time_local": "",
+                "venue_name_source": "",
+                "referee": "",
+                "raw_sequence": "",
+                "data_confidence": "failed",
+                "notes": f"Missing expected text file: {source['text_file']}",
+            })
+            continue
+
+        text = text_path.read_text(encoding="utf-8", errors="ignore")
+        lines = r6_clean_lines(text)
+        fixtures = r6_parse_fixtures_from_lines(lines)
+
+        for fixture_index, fixture in enumerate(fixtures):
+            row = {
+                "season_id": source["season_id"],
+                "competition_id": source["competition_id"],
+                "competition_name": source["competition_name"],
+                "competition_group": source["competition_group"],
+                "cod_temporada": source["cod_temporada"],
+                "cod_competicion": source["cod_competicion"],
+                "cod_grupo": source["cod_grupo"],
+                "cod_jornada": source["cod_jornada"],
+                "fixture_index": str(fixture_index),
+            }
+            row.update(fixture)
+            r6_rows.append(row)
+
+except Exception as e:
+    r6_rows.append({
+        "season_id": "",
+        "competition_id": "",
+        "competition_name": "",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "fixture_index": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "venue_name_source": "",
+        "referee": "",
+        "raw_sequence": "",
+        "data_confidence": "failed",
+        "notes": f"RFEF Research R6 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r6_jornada_1_parsed_fixtures.csv",
+    r6_fields,
+    r6_rows,
+)
+
+# Validation
+r6_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+r6_group_1_rows = [
+    row for row in r6_rows
+    if row.get("competition_group") == "Grupo 1"
+]
+
+r6_group_2_rows = [
+    row for row in r6_rows
+    if row.get("competition_group") == "Grupo 2"
+]
+
+r6_high_rows = [
+    row for row in r6_rows
+    if row.get("data_confidence") == "high"
+]
+
+r6_validation_rows = [
+    {
+        "check_name": "total_fixture_rows",
+        "result": str(len(r6_rows)),
+        "details": "Expected 20.",
+    },
+    {
+        "check_name": "grupo_1_fixture_rows",
+        "result": str(len(r6_group_1_rows)),
+        "details": "Expected 10.",
+    },
+    {
+        "check_name": "grupo_2_fixture_rows",
+        "result": str(len(r6_group_2_rows)),
+        "details": "Expected 10.",
+    },
+    {
+        "check_name": "high_confidence_rows",
+        "result": str(len(r6_high_rows)),
+        "details": "Expected 20 if all fixtures parsed.",
+    },
+]
+
+write_csv(
+    "rfef_research_r6_validation_summary.csv",
+    r6_validation_fields,
+    r6_validation_rows,
+)
+
+print(f"RFEF Research R6 parsed {len(r6_rows)} fixture rows.")
