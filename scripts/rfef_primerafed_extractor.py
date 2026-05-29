@@ -1716,3 +1716,288 @@ with root_route_matrix_path.open("w", newline="", encoding="utf-8") as f:
     writer.writerows(route_matrix_rows)
 
 print(f"Created Grupo 2 route matrix: {len(route_matrix_rows)} tests.")
+# -----------------------------
+# Calendar-view availability audit:
+# Test missing Grupo 1 J30-38 and Grupo 2 J1-38 via marcadores calendar route
+# -----------------------------
+
+calendar_missing_fields = [
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "calendar_url",
+    "page_loaded",
+    "text_length",
+    "html_length",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_resultados",
+    "contains_calendario",
+    "contains_score_marker",
+    "contains_date",
+    "contains_time",
+    "first_120_lines",
+    "first_html_fragment",
+    "notes",
+]
+
+calendar_missing_rows = []
+
+calendar_missing_tests = []
+
+# Missing Grupo 1 fixtures: Jornadas 30-38
+for jornada in range(30, 39):
+    calendar_missing_tests.append({
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "cod_jornada": str(jornada),
+    })
+
+# Missing Grupo 2 fixtures: Jornadas 1-38
+for jornada in range(1, 39):
+    calendar_missing_tests.append({
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "cod_jornada": str(jornada),
+    })
+
+
+def calendar_missing_clean_lines(text):
+    lines = []
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+        if cleaned:
+            lines.append(cleaned)
+    return lines
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        # Establish one session first.
+        session_page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        session_page.goto(
+            "https://marcadores.rfef.es/pnfg/?accion=1",
+            wait_until="networkidle",
+            timeout=60000,
+        )
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if session_page.locator(selector).count() > 0:
+                    session_page.locator(selector).first.click(timeout=3000)
+                    session_page.wait_for_timeout(1000)
+                    break
+            except Exception:
+                pass
+
+        session_page.close()
+
+        for test in calendar_missing_tests:
+            calendar_url = (
+                "https://marcadores.rfef.es/pnfg/NPcd/NFG_VisCalendario_Vis"
+                "?cod_primaria=1000120"
+                f"&codtemporada={test['cod_temporada']}"
+                f"&codjornada={test['cod_jornada']}"
+                f"&codcompeticion={test['cod_competicion']}"
+                f"&codgrupo={test['cod_grupo']}"
+            )
+
+            try:
+                page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                )
+
+                response = page.goto(calendar_url, wait_until="networkidle", timeout=60000)
+                page.wait_for_timeout(3000)
+
+                page_text = page.inner_text("body")
+                page_html = page.content()
+
+                text_lower = page_text.lower()
+                html_lower = page_html.lower()
+
+                lines = calendar_missing_clean_lines(page_text)
+                first_120_lines = " | ".join(lines[:120])
+                first_html_fragment = re.sub(r"\s+", " ", page_html[:6000]).strip()
+
+                contains_score_marker = bool(
+                    re.search(r"\b[0-9]{1,2}\s*-\s*[0-9]{1,2}\b", page_text)
+                    or re.search(r"\n\s*-\s*\n", page_text)
+                )
+
+                contains_date = bool(
+                    re.search(r"\b[0-9]{2}-[0-9]{2}-[0-9]{4}\b", page_text)
+                    or re.search(r"\b[0-9]{2}/[0-9]{2}/[0-9]{4}\b", page_text)
+                )
+
+                contains_time = bool(
+                    re.search(r"\b[0-9]{1,2}:[0-9]{2}\b", page_text)
+                )
+
+                safe_name = re.sub(
+                    r"[^A-Za-z0-9]+",
+                    "_",
+                    f"{test['competition_group']}_calendar_jornada_{test['cod_jornada']}",
+                ).strip("_").lower()
+
+                # Save all tested calendar pages for inspection.
+                (EXPORT_DIR / f"primerafed_calendar_missing_{safe_name}_text.txt").write_text(
+                    page_text[:500000],
+                    encoding="utf-8",
+                )
+
+                (EXPORT_DIR / f"primerafed_calendar_missing_{safe_name}.html").write_text(
+                    page_html[:800000],
+                    encoding="utf-8",
+                )
+
+                calendar_missing_rows.append({
+                    "competition_group": test["competition_group"],
+                    "cod_temporada": test["cod_temporada"],
+                    "cod_competicion": test["cod_competicion"],
+                    "cod_grupo": test["cod_grupo"],
+                    "cod_jornada": test["cod_jornada"],
+                    "calendar_url": calendar_url,
+                    "page_loaded": "true",
+                    "text_length": str(len(page_text)),
+                    "html_length": str(len(page_html)),
+                    "contains_primera_federacion": str(
+                        "primera federación" in text_lower
+                        or "primera federacion" in text_lower
+                        or "primera federaci" in text_lower
+                        or "primera federación" in html_lower
+                        or "primera federacion" in html_lower
+                        or "primera federaci" in html_lower
+                    ).lower(),
+                    "contains_grupo_1": str(
+                        "grupo 1" in text_lower
+                        or "grupo i" in text_lower
+                        or "grupo 1" in html_lower
+                        or "grupo i" in html_lower
+                    ).lower(),
+                    "contains_grupo_2": str(
+                        "grupo 2" in text_lower
+                        or "grupo ii" in text_lower
+                        or "grupo 2" in html_lower
+                        or "grupo ii" in html_lower
+                    ).lower(),
+                    "contains_jornada": str(
+                        "jornada" in text_lower
+                        or "jornada" in html_lower
+                    ).lower(),
+                    "contains_resultados": str(
+                        "resultado" in text_lower
+                        or "resultados" in text_lower
+                        or "resultado" in html_lower
+                        or "resultados" in html_lower
+                    ).lower(),
+                    "contains_calendario": str(
+                        "calendario" in text_lower
+                        or "calendario" in html_lower
+                    ).lower(),
+                    "contains_score_marker": str(contains_score_marker).lower(),
+                    "contains_date": str(contains_date).lower(),
+                    "contains_time": str(contains_time).lower(),
+                    "first_120_lines": first_120_lines[:8000],
+                    "first_html_fragment": first_html_fragment[:8000],
+                    "notes": "Calendar-view test for missing Primera Federación fixtures.",
+                })
+
+                page.close()
+
+            except Exception as e:
+                calendar_missing_rows.append({
+                    "competition_group": test["competition_group"],
+                    "cod_temporada": test["cod_temporada"],
+                    "cod_competicion": test["cod_competicion"],
+                    "cod_grupo": test["cod_grupo"],
+                    "cod_jornada": test["cod_jornada"],
+                    "calendar_url": calendar_url,
+                    "page_loaded": "false",
+                    "text_length": "0",
+                    "html_length": "0",
+                    "contains_primera_federacion": "false",
+                    "contains_grupo_1": "false",
+                    "contains_grupo_2": "false",
+                    "contains_jornada": "false",
+                    "contains_resultados": "false",
+                    "contains_calendario": "false",
+                    "contains_score_marker": "false",
+                    "contains_date": "false",
+                    "contains_time": "false",
+                    "first_120_lines": "",
+                    "first_html_fragment": "",
+                    "notes": f"Calendar-view missing fixture test failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    calendar_missing_rows.append({
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "calendar_url": "",
+        "page_loaded": "false",
+        "text_length": "0",
+        "html_length": "0",
+        "contains_primera_federacion": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_resultados": "false",
+        "contains_calendario": "false",
+        "contains_score_marker": "false",
+        "contains_date": "false",
+        "contains_time": "false",
+        "first_120_lines": "",
+        "first_html_fragment": "",
+        "notes": f"Calendar-view missing fixture stage failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "primerafed_2025_26_missing_fixtures_calendar_audit.csv",
+    calendar_missing_fields,
+    calendar_missing_rows,
+)
+
+# Root-level copy for easy artifact access.
+root_calendar_missing_path = Path("primerafed_2025_26_missing_fixtures_calendar_audit.csv")
+
+with root_calendar_missing_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=calendar_missing_fields)
+    writer.writeheader()
+    writer.writerows(calendar_missing_rows)
+
+print(f"Created missing fixtures calendar audit: {len(calendar_missing_rows)} tests.")
