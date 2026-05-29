@@ -726,4 +726,169 @@ r3_patterns = {
 }
 
 try:
-    response_file = EXPORT_DIR / "
+    response_file = EXPORT_DIR / "rfef_research_r2_football_masculino_femenino_clasificacion_exact_button.html"
+
+    if not response_file.exists():
+        r3_rows.append({
+            "item_type": "error",
+            "label_or_text": "",
+            "href_or_action": "",
+            "cod_temporada": "",
+            "cod_competicion": "",
+            "cod_grupo": "",
+            "contains_primera_federacion": "false",
+            "contains_liga_regular": "false",
+            "contains_grupo_1": "false",
+            "contains_grupo_2": "false",
+            "contains_codcompeticion": "false",
+            "contains_codgrupo": "false",
+            "contains_codtemporada": "false",
+            "notes": "Expected R2 classification response HTML file not found. Run R2 first.",
+        })
+
+    else:
+        html = response_file.read_text(encoding="utf-8", errors="ignore")
+
+        plain_text = re.sub(r"<[^>]+>", " ", html)
+        plain_text = re.sub(r"\s+", " ", plain_text).strip()
+
+        plain_path = EXPORT_DIR / "rfef_research_r3_classification_response_plain_text.txt"
+        plain_path.write_text(plain_text[:500000], encoding="utf-8")
+
+        # Extract links.
+        link_matches = re.findall(
+            r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>(.*?)</a>',
+            html,
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for href, raw_text in link_matches:
+            label = re.sub(r"<[^>]+>", " ", raw_text)
+            label = re.sub(r"\s+", " ", label).strip()
+
+            combined = f"{label} {href}"
+            combined_lower = combined.lower()
+
+            if (
+                "primera federación" in combined_lower
+                or "primera federacion" in combined_lower
+                or "liga regular" in combined_lower
+                or "grupo 1" in combined_lower
+                or "grupo 2" in combined_lower
+                or "grupo i" in combined_lower
+                or "grupo ii" in combined_lower
+                or "codcompeticion" in combined_lower
+                or "codgrupo" in combined_lower
+                or "codtemporada" in combined_lower
+            ):
+                r3_rows.append({
+                    "item_type": "link",
+                    "label_or_text": label[:1500],
+                    "href_or_action": href[:2000],
+                    "cod_temporada": r3_extract_code(combined, r3_patterns["cod_temporada"]),
+                    "cod_competicion": r3_extract_code(combined, r3_patterns["cod_competicion"]),
+                    "cod_grupo": r3_extract_code(combined, r3_patterns["cod_grupo"]),
+                    "contains_primera_federacion": str(
+                        "primera federación" in combined_lower
+                        or "primera federacion" in combined_lower
+                        or "primera federaci" in combined_lower
+                    ).lower(),
+                    "contains_liga_regular": str(
+                        "liga regular" in combined_lower
+                        or "fase regular" in combined_lower
+                    ).lower(),
+                    "contains_grupo_1": str(
+                        "grupo 1" in combined_lower
+                        or "grupo i" in combined_lower
+                    ).lower(),
+                    "contains_grupo_2": str(
+                        "grupo 2" in combined_lower
+                        or "grupo ii" in combined_lower
+                    ).lower(),
+                    "contains_codcompeticion": str("codcompeticion" in combined_lower).lower(),
+                    "contains_codgrupo": str("codgrupo" in combined_lower).lower(),
+                    "contains_codtemporada": str("codtemporada" in combined_lower).lower(),
+                    "notes": "Link extracted from R2 classification response.",
+                })
+
+        # Extract relevant HTML fragments.
+        fragments = re.split(
+            r"[\n\r]+|</a>|</button>|</div>|</li>|</tr>|</span>|</section>",
+            html,
+        )
+
+        for fragment in fragments:
+            fragment_lower = fragment.lower()
+
+            if (
+                "primera federación" in fragment_lower
+                or "primera federacion" in fragment_lower
+                or "primera federaci" in fragment_lower
+                or "liga regular" in fragment_lower
+                or "fase regular" in fragment_lower
+                or "grupo 1" in fragment_lower
+                or "grupo 2" in fragment_lower
+                or "grupo i" in fragment_lower
+                or "grupo ii" in fragment_lower
+                or "codcompeticion" in fragment_lower
+                or "codgrupo" in fragment_lower
+                or "codtemporada" in fragment_lower
+            ):
+                label = re.sub(r"<[^>]+>", " ", fragment)
+                label = re.sub(r"\s+", " ", label).strip()
+
+                r3_rows.append({
+                    "item_type": "html_fragment",
+                    "label_or_text": label[:2000],
+                    "href_or_action": fragment[:2500],
+                    "cod_temporada": r3_extract_code(fragment, r3_patterns["cod_temporada"]),
+                    "cod_competicion": r3_extract_code(fragment, r3_patterns["cod_competicion"]),
+                    "cod_grupo": r3_extract_code(fragment, r3_patterns["cod_grupo"]),
+                    "contains_primera_federacion": str(
+                        "primera federación" in fragment_lower
+                        or "primera federacion" in fragment_lower
+                        or "primera federaci" in fragment_lower
+                    ).lower(),
+                    "contains_liga_regular": str(
+                        "liga regular" in fragment_lower
+                        or "fase regular" in fragment_lower
+                    ).lower(),
+                    "contains_grupo_1": str(
+                        "grupo 1" in fragment_lower
+                        or "grupo i" in fragment_lower
+                    ).lower(),
+                    "contains_grupo_2": str(
+                        "grupo 2" in fragment_lower
+                        or "grupo ii" in fragment_lower
+                    ).lower(),
+                    "contains_codcompeticion": str("codcompeticion" in fragment_lower).lower(),
+                    "contains_codgrupo": str("codgrupo" in fragment_lower).lower(),
+                    "contains_codtemporada": str("codtemporada" in fragment_lower).lower(),
+                    "notes": "Relevant fragment extracted from R2 classification response.",
+                })
+
+except Exception as e:
+    r3_rows.append({
+        "item_type": "error",
+        "label_or_text": "",
+        "href_or_action": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_codcompeticion": "false",
+        "contains_codgrupo": "false",
+        "contains_codtemporada": "false",
+        "notes": f"RFEF Research R3 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r3_classification_code_links.csv",
+    r3_fields,
+    r3_rows,
+)
+
+print(f"RFEF Research R3 extracted {len(r3_rows)} classification code/link rows.")
