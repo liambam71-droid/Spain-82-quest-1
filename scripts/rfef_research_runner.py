@@ -1108,3 +1108,345 @@ write_csv(
 )
 
 print(f"RFEF Research R4 tested {len(r4_rows)} discovered group URLs.")
+# -----------------------------
+# RFEF Research Stage R5:
+# Extract Jornada 1 from Primera Federación Grupo 1 and Grupo 2 into raw fixture rows
+# -----------------------------
+
+r5_fields = [
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "source_url",
+    "raw_match_index",
+    "raw_match_text",
+    "home_team_name_source",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "fixture_date",
+    "extraction_method",
+    "data_confidence",
+    "notes",
+]
+
+r5_rows = []
+
+r5_tests = [
+    {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "cod_jornada": "1",
+    },
+    {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "cod_jornada": "1",
+    },
+]
+
+
+def r5_extract_score_line_candidates(page_text):
+    """
+    RFEF pages are not JSON like LaLiga. This first pass extracts likely match blocks
+    from visible text, keeping raw text so we can inspect and refine.
+    """
+    lines = [
+        re.sub(r"\s+", " ", line).strip()
+        for line in page_text.splitlines()
+        if re.sub(r"\s+", " ", line).strip()
+    ]
+
+    candidates = []
+
+    for i, line in enumerate(lines):
+        line_lower = line.lower()
+
+        # Match lines usually contain a score pattern or fixture/result-related words nearby.
+        has_score = bool(re.search(r"\b[0-9]{1,2}\s*[-–]\s*[0-9]{1,2}\b", line))
+        has_vs = " - " in line or " v " in line_lower or " vs " in line_lower
+        has_fixture_word = (
+            "jornada" in line_lower
+            or "acta" in line_lower
+            or "resultado" in line_lower
+            or "finalizado" in line_lower
+        )
+
+        if has_score or has_vs or has_fixture_word:
+            start = max(i - 3, 0)
+            end = min(i + 4, len(lines))
+            block = " | ".join(lines[start:end])
+
+            if block not in candidates:
+                candidates.append(block)
+
+    return candidates
+
+
+def r5_try_parse_match_block(block):
+    """
+    Conservative first-pass parser. If it cannot confidently parse, it leaves fields blank
+    and preserves raw_match_text for inspection.
+    """
+    home_team = ""
+    away_team = ""
+    home_score = ""
+    away_score = ""
+    fixture_date = ""
+
+    # Try score formats like Team A 1-0 Team B or Team A 1 - 0 Team B.
+    score_match = re.search(
+        r"(.+?)\s+([0-9]{1,2})\s*[-–]\s*([0-9]{1,2})\s+(.+)",
+        block,
+    )
+
+    if score_match:
+        left = score_match.group(1).strip(" |-/")
+        home_score = score_match.group(2)
+        away_score = score_match.group(3)
+        right = score_match.group(4).strip(" |-/")
+
+        # Trim noisy prefixes/suffixes.
+        home_team = left.split("|")[-1].strip()
+        away_team = right.split("|")[0].strip()
+
+    # Try date patterns.
+    date_match = re.search(r"\b([0-9]{1,2}/[0-9]{1,2}/[0-9]{4})\b", block)
+    if date_match:
+        fixture_date = date_match.group(1)
+
+    return home_team, away_team, home_score, away_score, fixture_date
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for test in r5_tests:
+            source_url = (
+                "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada"
+                "?cod_primaria=1000120"
+                f"&CodTemporada={test['cod_temporada']}"
+                f"&CodJornada={test['cod_jornada']}"
+                f"&CodCompeticion={test['cod_competicion']}"
+                f"&CodGrupo={test['cod_grupo']}"
+            )
+
+            try:
+                page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                )
+
+                page.goto(source_url, wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(2000)
+                            break
+                    except Exception:
+                        pass
+
+                page_text = page.inner_text("body")
+                page_html = page.content()
+
+                safe_name = re.sub(
+                    r"[^A-Za-z0-9]+",
+                    "_",
+                    f"{test['competition_group']}_jornada_{test['cod_jornada']}",
+                ).strip("_").lower()
+
+                html_path = EXPORT_DIR / f"rfef_research_r5_{safe_name}.html"
+                html_path.write_text(page_html[:700000], encoding="utf-8")
+
+                text_path = EXPORT_DIR / f"rfef_research_r5_{safe_name}_text.txt"
+                text_path.write_text(page_text[:300000], encoding="utf-8")
+
+                candidates = r5_extract_score_line_candidates(page_text)
+
+                if not candidates:
+                    r5_rows.append({
+                        "season_id": test["season_id"],
+                        "competition_id": test["competition_id"],
+                        "competition_name": test["competition_name"],
+                        "competition_group": test["competition_group"],
+                        "cod_temporada": test["cod_temporada"],
+                        "cod_competicion": test["cod_competicion"],
+                        "cod_grupo": test["cod_grupo"],
+                        "cod_jornada": test["cod_jornada"],
+                        "source_url": source_url,
+                        "raw_match_index": "",
+                        "raw_match_text": "",
+                        "home_team_name_source": "",
+                        "away_team_name_source": "",
+                        "home_score": "",
+                        "away_score": "",
+                        "fixture_date": "",
+                        "extraction_method": "visible_text_candidate_scan",
+                        "data_confidence": "failed",
+                        "notes": "No candidate match blocks found. Inspect saved text/html.",
+                    })
+
+                for index, block in enumerate(candidates):
+                    home_team, away_team, home_score, away_score, fixture_date = r5_try_parse_match_block(block)
+
+                    parsed_ok = bool(home_team and away_team and home_score != "" and away_score != "")
+
+                    r5_rows.append({
+                        "season_id": test["season_id"],
+                        "competition_id": test["competition_id"],
+                        "competition_name": test["competition_name"],
+                        "competition_group": test["competition_group"],
+                        "cod_temporada": test["cod_temporada"],
+                        "cod_competicion": test["cod_competicion"],
+                        "cod_grupo": test["cod_grupo"],
+                        "cod_jornada": test["cod_jornada"],
+                        "source_url": source_url,
+                        "raw_match_index": str(index),
+                        "raw_match_text": block,
+                        "home_team_name_source": home_team,
+                        "away_team_name_source": away_team,
+                        "home_score": home_score,
+                        "away_score": away_score,
+                        "fixture_date": fixture_date,
+                        "extraction_method": "visible_text_candidate_scan",
+                        "data_confidence": "medium" if parsed_ok else "needs_review",
+                        "notes": "First-pass RFEF visible-text extraction. Raw block retained for parser refinement.",
+                    })
+
+                page.close()
+
+            except Exception as e:
+                r5_rows.append({
+                    "season_id": test["season_id"],
+                    "competition_id": test["competition_id"],
+                    "competition_name": test["competition_name"],
+                    "competition_group": test["competition_group"],
+                    "cod_temporada": test["cod_temporada"],
+                    "cod_competicion": test["cod_competicion"],
+                    "cod_grupo": test["cod_grupo"],
+                    "cod_jornada": test["cod_jornada"],
+                    "source_url": source_url,
+                    "raw_match_index": "",
+                    "raw_match_text": "",
+                    "home_team_name_source": "",
+                    "away_team_name_source": "",
+                    "home_score": "",
+                    "away_score": "",
+                    "fixture_date": "",
+                    "extraction_method": "visible_text_candidate_scan",
+                    "data_confidence": "failed",
+                    "notes": f"R5 extraction failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    r5_rows.append({
+        "season_id": "",
+        "competition_id": "",
+        "competition_name": "",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "source_url": "",
+        "raw_match_index": "",
+        "raw_match_text": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "fixture_date": "",
+        "extraction_method": "visible_text_candidate_scan",
+        "data_confidence": "failed",
+        "notes": f"RFEF Research R5 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r5_jornada_1_raw_fixture_candidates.csv",
+    r5_fields,
+    r5_rows,
+)
+
+# Validation summary
+r5_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+r5_group_1_rows = [
+    row for row in r5_rows
+    if row.get("competition_group") == "Grupo 1"
+]
+
+r5_group_2_rows = [
+    row for row in r5_rows
+    if row.get("competition_group") == "Grupo 2"
+]
+
+r5_medium_rows = [
+    row for row in r5_rows
+    if row.get("data_confidence") == "medium"
+]
+
+r5_validation_rows = [
+    {
+        "check_name": "total_candidate_rows",
+        "result": str(len(r5_rows)),
+        "details": "Expected roughly 20 candidate rows if both groups expose 10 matches each.",
+    },
+    {
+        "check_name": "grupo_1_candidate_rows",
+        "result": str(len(r5_group_1_rows)),
+        "details": "Expected roughly 10.",
+    },
+    {
+        "check_name": "grupo_2_candidate_rows",
+        "result": str(len(r5_group_2_rows)),
+        "details": "Expected roughly 10.",
+    },
+    {
+        "check_name": "medium_confidence_parsed_rows",
+        "result": str(len(r5_medium_rows)),
+        "details": "Rows where a basic home/away/score parse succeeded.",
+    },
+]
+
+write_csv(
+    "rfef_research_r5_validation_summary.csv",
+    r5_validation_fields,
+    r5_validation_rows,
+)
+
+print(f"RFEF Research R5 extracted {len(r5_rows)} raw candidate rows.")
