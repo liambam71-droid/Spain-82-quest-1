@@ -1323,3 +1323,396 @@ with root_network_compare_path.open("w", newline="", encoding="utf-8") as f:
     writer.writerows(network_compare_rows)
 
 print("Created focused network comparison: primerafed_2025_26_network_compare_g1j1_vs_g2j1.csv")
+# -----------------------------
+# Grupo 2 route matrix:
+# Test alternative RFEF route/parameter shapes for Primera Federación Grupo 2
+# -----------------------------
+
+route_matrix_fields = [
+    "test_name",
+    "host",
+    "route_name",
+    "cod_primaria",
+    "parameter_style",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "test_url",
+    "http_status",
+    "page_loaded",
+    "text_length",
+    "html_length",
+    "contains_primera_federacion",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_resultados",
+    "contains_calendario",
+    "contains_score_sequence",
+    "candidate_sequence_count",
+    "first_100_lines",
+    "first_html_fragment",
+    "notes",
+]
+
+route_matrix_rows = []
+
+grupo_2_test_config = {
+    "cod_temporada": "21",
+    "cod_competicion": "23289295",
+    "cod_grupo": "23289297",
+    "cod_jornada": "1",
+}
+
+route_matrix_hosts = [
+    "https://resultados.rfef.es",
+    "https://marcadores.rfef.es",
+]
+
+route_matrix_routes = [
+    {
+        "route_name": "NFG_CmpJornada",
+        "path": "/pnfg/NPcd/NFG_CmpJornada",
+    },
+    {
+        "route_name": "NFG_VisCalendario_Vis",
+        "path": "/pnfg/NPcd/NFG_VisCalendario_Vis",
+    },
+    {
+        "route_name": "NFG_VisCalendario",
+        "path": "/pnfg/NPcd/NFG_VisCalendario",
+    },
+    {
+        "route_name": "NFG_CmpCalendario",
+        "path": "/pnfg/NPcd/NFG_CmpCalendario",
+    },
+    {
+        "route_name": "NFG_CmpJornada_Vis",
+        "path": "/pnfg/NPcd/NFG_CmpJornada_Vis",
+    },
+]
+
+route_matrix_cod_primaria_values = [
+    "1000120",
+    "3001668",
+]
+
+route_matrix_parameter_styles = [
+    {
+        "parameter_style": "upper_camel",
+        "params": {
+            "CodTemporada": grupo_2_test_config["cod_temporada"],
+            "CodJornada": grupo_2_test_config["cod_jornada"],
+            "CodCompeticion": grupo_2_test_config["cod_competicion"],
+            "CodGrupo": grupo_2_test_config["cod_grupo"],
+        },
+    },
+    {
+        "parameter_style": "lower_mixed",
+        "params": {
+            "codtemporada": grupo_2_test_config["cod_temporada"],
+            "codJornada": grupo_2_test_config["cod_jornada"],
+            "codcompeticion": grupo_2_test_config["cod_competicion"],
+            "codgrupo": grupo_2_test_config["cod_grupo"],
+        },
+    },
+    {
+        "parameter_style": "lower_all",
+        "params": {
+            "codtemporada": grupo_2_test_config["cod_temporada"],
+            "codjornada": grupo_2_test_config["cod_jornada"],
+            "codcompeticion": grupo_2_test_config["cod_competicion"],
+            "codgrupo": grupo_2_test_config["cod_grupo"],
+        },
+    },
+]
+
+
+def route_matrix_build_query(params):
+    parts = []
+    for key, value in params.items():
+        parts.append(f"{key}={value}")
+    return "&".join(parts)
+
+
+def route_matrix_clean_lines(text):
+    lines = []
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+        if cleaned:
+            lines.append(cleaned)
+    return lines
+
+
+def route_matrix_is_date(value):
+    return bool(re.match(r"^[0-9]{2}-[0-9]{2}-[0-9]{4}$", value.strip()))
+
+
+def route_matrix_is_time(value):
+    return bool(re.match(r"^[0-9]{1,2}:[0-9]{2}$", value.strip()))
+
+
+def route_matrix_is_score_marker(value):
+    value = value.strip()
+    return bool(
+        value == "-"
+        or re.match(r"^[0-9]{1,2}\s*-\s*[0-9]{1,2}$", value)
+        or re.match(r"^[0-9]{1,2}\s*-$", value)
+        or re.match(r"^-\s*[0-9]{1,2}$", value)
+    )
+
+
+def route_matrix_count_candidate_sequences(lines):
+    count = 0
+
+    for i in range(len(lines)):
+        if i + 5 < len(lines):
+            score_marker = lines[i + 1]
+            date_value = lines[i + 2]
+            time_value = lines[i + 3]
+
+            if (
+                route_matrix_is_score_marker(score_marker)
+                and route_matrix_is_date(date_value)
+                and route_matrix_is_time(time_value)
+            ):
+                count += 1
+
+    return count
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for host in route_matrix_hosts:
+            for route in route_matrix_routes:
+                for cod_primaria in route_matrix_cod_primaria_values:
+                    for style in route_matrix_parameter_styles:
+                        params = {
+                            "cod_primaria": cod_primaria,
+                            **style["params"],
+                        }
+
+                        query = route_matrix_build_query(params)
+                        test_url = f"{host}{route['path']}?{query}"
+
+                        test_name = (
+                            f"Grupo 2 J1 | {host} | {route['route_name']} | "
+                            f"cod_primaria={cod_primaria} | {style['parameter_style']}"
+                        )
+
+                        try:
+                            page = browser.new_page(
+                                user_agent=(
+                                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                    "Chrome/120.0.0.0 Safari/537.36"
+                                )
+                            )
+
+                            # Establish session first.
+                            page.goto(
+                                "https://marcadores.rfef.es/pnfg/?accion=1",
+                                wait_until="networkidle",
+                                timeout=60000,
+                            )
+
+                            for selector in [
+                                "text=Aceptar",
+                                "text=ACEPTAR",
+                                "text=Accept",
+                                "button:has-text('Aceptar')",
+                                "button:has-text('ACEPTAR')",
+                            ]:
+                                try:
+                                    if page.locator(selector).count() > 0:
+                                        page.locator(selector).first.click(timeout=3000)
+                                        page.wait_for_timeout(1000)
+                                        break
+                                except Exception:
+                                    pass
+
+                            response = page.goto(
+                                test_url,
+                                wait_until="networkidle",
+                                timeout=60000,
+                            )
+
+                            status = response.status if response else ""
+
+                            # Give JavaScript a moment to populate if it is going to.
+                            page.wait_for_timeout(3000)
+
+                            page_text = page.inner_text("body")
+                            page_html = page.content()
+
+                            text_lower = page_text.lower()
+                            html_lower = page_html.lower()
+
+                            lines = route_matrix_clean_lines(page_text)
+                            candidate_sequence_count = route_matrix_count_candidate_sequences(lines)
+
+                            contains_score_sequence = bool(
+                                candidate_sequence_count > 0
+                                or re.search(
+                                    r"[0-9]{2}-[0-9]{2}-[0-9]{4}.*?[0-9]{1,2}:[0-9]{2}",
+                                    page_text,
+                                    re.DOTALL,
+                                )
+                            )
+
+                            safe_name = re.sub(
+                                r"[^A-Za-z0-9]+",
+                                "_",
+                                test_name,
+                            ).strip("_").lower()[:150]
+
+                            # Only save HTML/text for promising or odd responses, to keep artifacts manageable.
+                            if (
+                                len(page_text) > 0
+                                or candidate_sequence_count > 0
+                                or "primera" in html_lower
+                                or "jornada" in html_lower
+                                or "resultado" in html_lower
+                            ):
+                                (EXPORT_DIR / f"primerafed_route_matrix_{safe_name}_text.txt").write_text(
+                                    page_text[:300000],
+                                    encoding="utf-8",
+                                )
+
+                                (EXPORT_DIR / f"primerafed_route_matrix_{safe_name}.html").write_text(
+                                    page_html[:500000],
+                                    encoding="utf-8",
+                                )
+
+                            first_100_lines = " | ".join(lines[:100])
+                            first_html_fragment = re.sub(r"\s+", " ", page_html[:5000]).strip()
+
+                            route_matrix_rows.append({
+                                "test_name": test_name,
+                                "host": host,
+                                "route_name": route["route_name"],
+                                "cod_primaria": cod_primaria,
+                                "parameter_style": style["parameter_style"],
+                                "cod_temporada": grupo_2_test_config["cod_temporada"],
+                                "cod_competicion": grupo_2_test_config["cod_competicion"],
+                                "cod_grupo": grupo_2_test_config["cod_grupo"],
+                                "cod_jornada": grupo_2_test_config["cod_jornada"],
+                                "test_url": test_url,
+                                "http_status": str(status),
+                                "page_loaded": "true",
+                                "text_length": str(len(page_text)),
+                                "html_length": str(len(page_html)),
+                                "contains_primera_federacion": str(
+                                    "primera federación" in text_lower
+                                    or "primera federacion" in text_lower
+                                    or "primera federaci" in text_lower
+                                    or "primera federación" in html_lower
+                                    or "primera federacion" in html_lower
+                                    or "primera federaci" in html_lower
+                                ).lower(),
+                                "contains_grupo_2": str(
+                                    "grupo 2" in text_lower
+                                    or "grupo ii" in text_lower
+                                    or "grupo 2" in html_lower
+                                    or "grupo ii" in html_lower
+                                ).lower(),
+                                "contains_jornada": str(
+                                    "jornada" in text_lower
+                                    or "jornada" in html_lower
+                                ).lower(),
+                                "contains_resultados": str(
+                                    "resultado" in text_lower
+                                    or "resultados" in text_lower
+                                    or "resultado" in html_lower
+                                    or "resultados" in html_lower
+                                ).lower(),
+                                "contains_calendario": str(
+                                    "calendario" in text_lower
+                                    or "calendario" in html_lower
+                                ).lower(),
+                                "contains_score_sequence": str(contains_score_sequence).lower(),
+                                "candidate_sequence_count": str(candidate_sequence_count),
+                                "first_100_lines": first_100_lines[:6000],
+                                "first_html_fragment": first_html_fragment[:6000],
+                                "notes": "Grupo 2 route/parameter matrix test.",
+                            })
+
+                            page.close()
+
+                        except Exception as e:
+                            route_matrix_rows.append({
+                                "test_name": test_name,
+                                "host": host,
+                                "route_name": route["route_name"],
+                                "cod_primaria": cod_primaria,
+                                "parameter_style": style["parameter_style"],
+                                "cod_temporada": grupo_2_test_config["cod_temporada"],
+                                "cod_competicion": grupo_2_test_config["cod_competicion"],
+                                "cod_grupo": grupo_2_test_config["cod_grupo"],
+                                "cod_jornada": grupo_2_test_config["cod_jornada"],
+                                "test_url": test_url,
+                                "http_status": "",
+                                "page_loaded": "false",
+                                "text_length": "0",
+                                "html_length": "0",
+                                "contains_primera_federacion": "false",
+                                "contains_grupo_2": "false",
+                                "contains_jornada": "false",
+                                "contains_resultados": "false",
+                                "contains_calendario": "false",
+                                "contains_score_sequence": "false",
+                                "candidate_sequence_count": "0",
+                                "first_100_lines": "",
+                                "first_html_fragment": "",
+                                "notes": f"Route matrix test failed: {type(e).__name__}: {e}",
+                            })
+
+        browser.close()
+
+except Exception as e:
+    route_matrix_rows.append({
+        "test_name": "stage_error",
+        "host": "",
+        "route_name": "",
+        "cod_primaria": "",
+        "parameter_style": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "test_url": "",
+        "http_status": "",
+        "page_loaded": "false",
+        "text_length": "0",
+        "html_length": "0",
+        "contains_primera_federacion": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_resultados": "false",
+        "contains_calendario": "false",
+        "contains_score_sequence": "false",
+        "candidate_sequence_count": "0",
+        "first_100_lines": "",
+        "first_html_fragment": "",
+        "notes": f"Grupo 2 route matrix stage failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "primerafed_2025_26_grupo2_route_matrix.csv",
+    route_matrix_fields,
+    route_matrix_rows,
+)
+
+# Root-level copy for easy artifact access.
+root_route_matrix_path = Path("primerafed_2025_26_grupo2_route_matrix.csv")
+
+with root_route_matrix_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=route_matrix_fields)
+    writer.writeheader()
+    writer.writerows(route_matrix_rows)
+
+print(f"Created Grupo 2 route matrix: {len(route_matrix_rows)} tests.")
