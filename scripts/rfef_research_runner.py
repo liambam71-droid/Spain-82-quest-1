@@ -3113,3 +3113,424 @@ write_csv(
 )
 
 print(f"RFEF Research R10 tested {len(r10_rows)} exact route/host combinations.")
+# -----------------------------
+# RFEF Research Stage R11:
+# Fetch and parse full Calendario pages for Primera Federación Grupo 1 and Grupo 2
+# -----------------------------
+
+r11_fields = [
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "source_url",
+    "fixture_index",
+    "home_team_name_source",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "fixture_date",
+    "kickoff_time_local",
+    "venue_name_source",
+    "referee",
+    "raw_sequence",
+    "data_confidence",
+    "notes",
+]
+
+r11_rows = []
+
+r11_groups = [
+    {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+    },
+    {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+    },
+]
+
+
+def r11_is_date(value):
+    return bool(re.match(r"^[0-9]{2}-[0-9]{2}-[0-9]{4}$", value.strip()))
+
+
+def r11_is_time(value):
+    return bool(re.match(r"^[0-9]{1,2}:[0-9]{2}$", value.strip()))
+
+
+def r11_is_score_marker(value):
+    value = value.strip()
+    return bool(
+        value == "-"
+        or re.match(r"^[0-9]{1,2}\s*-\s*[0-9]{1,2}$", value)
+        or re.match(r"^[0-9]{1,2}\s*-$", value)
+        or re.match(r"^-\s*[0-9]{1,2}$", value)
+    )
+
+
+def r11_parse_score(value):
+    value = value.strip()
+
+    if value == "-":
+        return "", ""
+
+    match = re.match(r"^([0-9]{1,2})\s*-\s*([0-9]{1,2})$", value)
+    if match:
+        return match.group(1), match.group(2)
+
+    match = re.match(r"^([0-9]{1,2})\s*-$", value)
+    if match:
+        return match.group(1), ""
+
+    match = re.match(r"^-\s*([0-9]{1,2})$", value)
+    if match:
+        return "", match.group(1)
+
+    return "", ""
+
+
+def r11_clean_lines(text):
+    lines = []
+
+    skip_exact = {
+        "Competiciones",
+        "Acciones",
+        "Calendario Clasificaciones y Resultados Búsqueda por competición",
+        "Filtro de búsqueda Avanzado",
+        "Siguiente",
+        "Anterior",
+        "Provisional Definitivo",
+        "RESULTADOS",
+        "Calendario Clasificación Tabla Cruzada Goleadores Porteros",
+        "Calendario",
+        "Clasificación",
+        "Tabla Cruzada",
+        "Goleadores",
+        "Porteros",
+    }
+
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+
+        if not cleaned:
+            continue
+
+        if cleaned in skip_exact:
+            continue
+
+        if cleaned.startswith("Temporada "):
+            continue
+
+        if cleaned.startswith("Campeonato Nacional de Liga de Primera Federación"):
+            continue
+
+        if cleaned.startswith("Jornada "):
+            continue
+
+        lines.append(cleaned)
+
+    return lines
+
+
+def r11_parse_fixtures_from_lines(lines):
+    fixtures = []
+    i = 0
+
+    while i < len(lines):
+        # Same visible sequence as R6/R7:
+        # home_team, score_marker, date, time, away_team, venue, optional Árbitro:, optional referee
+        if i + 5 < len(lines):
+            home = lines[i]
+            score_marker = lines[i + 1]
+            date_value = lines[i + 2]
+            time_value = lines[i + 3]
+            away = lines[i + 4]
+            venue = lines[i + 5]
+
+            if (
+                r11_is_score_marker(score_marker)
+                and r11_is_date(date_value)
+                and r11_is_time(time_value)
+                and home.lower() != "árbitro:"
+                and away.lower() != "árbitro:"
+            ):
+                home_score, away_score = r11_parse_score(score_marker)
+
+                referee = ""
+                consumed = 6
+
+                if i + 7 < len(lines) and lines[i + 6].lower().startswith("árbitro"):
+                    referee = lines[i + 7]
+                    consumed = 8
+
+                fixtures.append({
+                    "home_team_name_source": home,
+                    "away_team_name_source": away,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "fixture_date": date_value,
+                    "kickoff_time_local": time_value,
+                    "venue_name_source": venue,
+                    "referee": referee,
+                    "raw_sequence": " | ".join(lines[i:i + consumed]),
+                    "data_confidence": "high" if home and away and date_value and time_value else "needs_review",
+                    "notes": "Parsed from RFEF Calendario visible text sequence.",
+                })
+
+                i += consumed
+                continue
+
+        i += 1
+
+    return fixtures
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for group in r11_groups:
+            source_url = (
+                "https://resultados.rfef.es/pnfg/NPcd/NFG_VisCalendario_Vis"
+                "?cod_primaria=1000120"
+                f"&codtemporada={group['cod_temporada']}"
+                "&codJornada=38"
+                f"&codcompeticion={group['cod_competicion']}"
+                f"&codgrupo={group['cod_grupo']}"
+            )
+
+            try:
+                page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                )
+
+                # Establish session first on the RFEF panel page.
+                page.goto("https://marcadores.rfef.es/pnfg/?accion=1", wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(1000)
+                            break
+                    except Exception:
+                        pass
+
+                page.goto(source_url, wait_until="networkidle", timeout=60000)
+                page.wait_for_timeout(3000)
+
+                page_text = page.inner_text("body")
+                page_html = page.content()
+
+                safe_name = re.sub(
+                    r"[^A-Za-z0-9]+",
+                    "_",
+                    f"{group['competition_group']}_calendario_full",
+                ).strip("_").lower()
+
+                html_path = EXPORT_DIR / f"rfef_research_r11_{safe_name}.html"
+                html_path.write_text(page_html[:1000000], encoding="utf-8")
+
+                text_path = EXPORT_DIR / f"rfef_research_r11_{safe_name}_text.txt"
+                text_path.write_text(page_text[:700000], encoding="utf-8")
+
+                lines = r11_clean_lines(page_text)
+                fixtures = r11_parse_fixtures_from_lines(lines)
+
+                if not fixtures:
+                    r11_rows.append({
+                        "season_id": group["season_id"],
+                        "competition_id": group["competition_id"],
+                        "competition_name": group["competition_name"],
+                        "competition_group": group["competition_group"],
+                        "cod_temporada": group["cod_temporada"],
+                        "cod_competicion": group["cod_competicion"],
+                        "cod_grupo": group["cod_grupo"],
+                        "source_url": source_url,
+                        "fixture_index": "",
+                        "home_team_name_source": "",
+                        "away_team_name_source": "",
+                        "home_score": "",
+                        "away_score": "",
+                        "fixture_date": "",
+                        "kickoff_time_local": "",
+                        "venue_name_source": "",
+                        "referee": "",
+                        "raw_sequence": "",
+                        "data_confidence": "failed",
+                        "notes": "No fixtures parsed from Calendario page. Inspect saved text/html.",
+                    })
+
+                for fixture_index, fixture in enumerate(fixtures):
+                    r11_rows.append({
+                        "season_id": group["season_id"],
+                        "competition_id": group["competition_id"],
+                        "competition_name": group["competition_name"],
+                        "competition_group": group["competition_group"],
+                        "cod_temporada": group["cod_temporada"],
+                        "cod_competicion": group["cod_competicion"],
+                        "cod_grupo": group["cod_grupo"],
+                        "source_url": source_url,
+                        "fixture_index": str(fixture_index),
+                        "home_team_name_source": fixture["home_team_name_source"],
+                        "away_team_name_source": fixture["away_team_name_source"],
+                        "home_score": fixture["home_score"],
+                        "away_score": fixture["away_score"],
+                        "fixture_date": fixture["fixture_date"],
+                        "kickoff_time_local": fixture["kickoff_time_local"],
+                        "venue_name_source": fixture["venue_name_source"],
+                        "referee": fixture["referee"],
+                        "raw_sequence": fixture["raw_sequence"],
+                        "data_confidence": fixture["data_confidence"],
+                        "notes": fixture["notes"],
+                    })
+
+                page.close()
+
+            except Exception as e:
+                r11_rows.append({
+                    "season_id": group["season_id"],
+                    "competition_id": group["competition_id"],
+                    "competition_name": group["competition_name"],
+                    "competition_group": group["competition_group"],
+                    "cod_temporada": group["cod_temporada"],
+                    "cod_competicion": group["cod_competicion"],
+                    "cod_grupo": group["cod_grupo"],
+                    "source_url": source_url,
+                    "fixture_index": "",
+                    "home_team_name_source": "",
+                    "away_team_name_source": "",
+                    "home_score": "",
+                    "away_score": "",
+                    "fixture_date": "",
+                    "kickoff_time_local": "",
+                    "venue_name_source": "",
+                    "referee": "",
+                    "raw_sequence": "",
+                    "data_confidence": "failed",
+                    "notes": f"R11 Calendario extraction failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    r11_rows.append({
+        "season_id": "",
+        "competition_id": "",
+        "competition_name": "",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "source_url": "",
+        "fixture_index": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "venue_name_source": "",
+        "referee": "",
+        "raw_sequence": "",
+        "data_confidence": "failed",
+        "notes": f"RFEF Research R11 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r11_full_calendar_parsed_fixtures.csv",
+    r11_fields,
+    r11_rows,
+)
+
+# Validation
+r11_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+r11_group_1_rows = [
+    row for row in r11_rows
+    if row.get("competition_group") == "Grupo 1"
+    and row.get("data_confidence") != "failed"
+]
+
+r11_group_2_rows = [
+    row for row in r11_rows
+    if row.get("competition_group") == "Grupo 2"
+    and row.get("data_confidence") != "failed"
+]
+
+r11_high_rows = [
+    row for row in r11_rows
+    if row.get("data_confidence") == "high"
+]
+
+r11_failed_rows = [
+    row for row in r11_rows
+    if row.get("data_confidence") == "failed"
+]
+
+r11_validation_rows = [
+    {
+        "check_name": "total_fixture_rows_non_failed",
+        "result": str(len([row for row in r11_rows if row.get("data_confidence") != "failed"])),
+        "details": "Expected up to 760 if full calendar exposes all fixtures for both groups.",
+    },
+    {
+        "check_name": "grupo_1_fixture_rows_non_failed",
+        "result": str(len(r11_group_1_rows)),
+        "details": "Expected up to 380.",
+    },
+    {
+        "check_name": "grupo_2_fixture_rows_non_failed",
+        "result": str(len(r11_group_2_rows)),
+        "details": "Expected up to 380.",
+    },
+    {
+        "check_name": "high_confidence_rows",
+        "result": str(len(r11_high_rows)),
+        "details": "High-confidence parsed calendar fixtures.",
+    },
+    {
+        "check_name": "failed_rows",
+        "result": str(len(r11_failed_rows)),
+        "details": "Expected 0 if both calendar pages parse.",
+    },
+]
+
+write_csv(
+    "rfef_research_r11_validation_summary.csv",
+    r11_validation_fields,
+    r11_validation_rows,
+)
+
+print(f"RFEF Research R11 produced {len(r11_rows)} rows.")
