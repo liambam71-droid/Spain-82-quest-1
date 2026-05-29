@@ -1040,3 +1040,286 @@ with root_html_audit_path.open("w", newline="", encoding="utf-8") as f:
     writer.writerows(html_failure_audit_rows)
 
 print("Created HTML failed pages audit: primerafed_2025_26_failed_pages_html_audit.csv")
+# -----------------------------
+# Focused network audit:
+# Compare working Grupo 1 J1 vs empty Grupo 2 J1
+# -----------------------------
+
+network_compare_fields = [
+    "test_name",
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "request_index",
+    "method",
+    "resource_type",
+    "url",
+    "post_data",
+    "response_status",
+    "response_length",
+    "contains_primera_federacion",
+    "contains_jornada",
+    "contains_resultados",
+    "contains_team_sequence",
+    "sample_text",
+    "notes",
+]
+
+network_compare_rows = []
+
+network_tests = [
+    {
+        "test_name": "Working comparison - Grupo 1 Jornada 1",
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "cod_jornada": "1",
+    },
+    {
+        "test_name": "Empty comparison - Grupo 2 Jornada 1",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "cod_jornada": "1",
+    },
+]
+
+
+def focused_safe_decode(body):
+    for encoding in ["utf-8", "latin-1", "cp1252"]:
+        try:
+            return body.decode(encoding), encoding
+        except Exception:
+            pass
+
+    return body.decode("utf-8", errors="ignore"), "utf-8-ignore"
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for test in network_tests:
+            captured = []
+
+            source_url = (
+                "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada"
+                "?cod_primaria=1000120"
+                f"&CodTemporada={test['cod_temporada']}"
+                f"&CodJornada={test['cod_jornada']}"
+                f"&CodCompeticion={test['cod_competicion']}"
+                f"&CodGrupo={test['cod_grupo']}"
+            )
+
+            page = browser.new_page(
+                user_agent=(
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36"
+                )
+            )
+
+            def capture_response(response):
+                try:
+                    request = response.request
+                    resource_type = request.resource_type
+                    url = request.url
+
+                    # Keep potentially relevant responses only.
+                    interesting = (
+                        "pnfg" in url.lower()
+                        or "nfg" in url.lower()
+                        or resource_type in ["document", "xhr", "fetch"]
+                    )
+
+                    if not interesting:
+                        return
+
+                    try:
+                        body = response.body()
+                        response_text, decode_method = focused_safe_decode(body)
+                    except Exception as response_error:
+                        response_text = f"Could not read response body: {type(response_error).__name__}: {response_error}"
+                        decode_method = "failed"
+
+                    captured.append({
+                        "method": request.method,
+                        "resource_type": resource_type,
+                        "url": url,
+                        "post_data": request.post_data or "",
+                        "response_status": response.status,
+                        "response_text": response_text,
+                        "decode_method": decode_method,
+                    })
+
+                except Exception:
+                    pass
+
+            page.on("response", capture_response)
+
+            try:
+                # Establish session first.
+                page.goto("https://marcadores.rfef.es/pnfg/?accion=1", wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(1000)
+                            break
+                    except Exception:
+                        pass
+
+                # Now open target jornada URL.
+                page.goto(source_url, wait_until="networkidle", timeout=60000)
+                page.wait_for_timeout(5000)
+
+                # Save final page body/html for this exact test.
+                final_text = page.inner_text("body")
+                final_html = page.content()
+
+                safe_test_name = re.sub(
+                    r"[^A-Za-z0-9]+",
+                    "_",
+                    test["test_name"],
+                ).strip("_").lower()
+
+                (EXPORT_DIR / f"primerafed_network_compare_{safe_test_name}_final_text.txt").write_text(
+                    final_text[:300000],
+                    encoding="utf-8",
+                )
+
+                (EXPORT_DIR / f"primerafed_network_compare_{safe_test_name}_final_html.html").write_text(
+                    final_html[:500000],
+                    encoding="utf-8",
+                )
+
+                for request_index, item in enumerate(captured):
+                    response_text = item["response_text"]
+                    response_lower = response_text.lower()
+
+                    # Save each captured response body for manual inspection.
+                    response_filename = (
+                        f"primerafed_network_compare_{safe_test_name}_response_{request_index}.txt"
+                    )
+                    (EXPORT_DIR / response_filename).write_text(
+                        response_text[:500000],
+                        encoding="utf-8",
+                    )
+
+                    plain_sample = re.sub(r"<[^>]+>", " ", response_text[:5000])
+                    plain_sample = re.sub(r"\s+", " ", plain_sample).strip()
+
+                    contains_team_sequence = bool(
+                        re.search(
+                            r"\n\s*-\s*\n\s*[0-9]{2}-[0-9]{2}-[0-9]{4}\s*\n\s*[0-9]{1,2}:[0-9]{2}",
+                            response_text,
+                        )
+                    )
+
+                    network_compare_rows.append({
+                        "test_name": test["test_name"],
+                        "competition_group": test["competition_group"],
+                        "cod_temporada": test["cod_temporada"],
+                        "cod_competicion": test["cod_competicion"],
+                        "cod_grupo": test["cod_grupo"],
+                        "cod_jornada": test["cod_jornada"],
+                        "request_index": str(request_index),
+                        "method": item["method"],
+                        "resource_type": item["resource_type"],
+                        "url": item["url"],
+                        "post_data": item["post_data"],
+                        "response_status": str(item["response_status"]),
+                        "response_length": str(len(response_text)),
+                        "contains_primera_federacion": str(
+                            "primera federación" in response_lower
+                            or "primera federacion" in response_lower
+                            or "primera federaci" in response_lower
+                        ).lower(),
+                        "contains_jornada": str("jornada" in response_lower).lower(),
+                        "contains_resultados": str(
+                            "resultado" in response_lower
+                            or "resultados" in response_lower
+                        ).lower(),
+                        "contains_team_sequence": str(contains_team_sequence).lower(),
+                        "sample_text": plain_sample[:3000],
+                        "notes": f"Captured response. Decode method: {item['decode_method']}.",
+                    })
+
+            except Exception as e:
+                network_compare_rows.append({
+                    "test_name": test["test_name"],
+                    "competition_group": test["competition_group"],
+                    "cod_temporada": test["cod_temporada"],
+                    "cod_competicion": test["cod_competicion"],
+                    "cod_grupo": test["cod_grupo"],
+                    "cod_jornada": test["cod_jornada"],
+                    "request_index": "",
+                    "method": "",
+                    "resource_type": "",
+                    "url": source_url,
+                    "post_data": "",
+                    "response_status": "",
+                    "response_length": "0",
+                    "contains_primera_federacion": "false",
+                    "contains_jornada": "false",
+                    "contains_resultados": "false",
+                    "contains_team_sequence": "false",
+                    "sample_text": "",
+                    "notes": f"Focused network comparison failed: {type(e).__name__}: {e}",
+                })
+
+            page.close()
+
+        browser.close()
+
+except Exception as e:
+    network_compare_rows.append({
+        "test_name": "stage_error",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "request_index": "",
+        "method": "",
+        "resource_type": "",
+        "url": "",
+        "post_data": "",
+        "response_status": "",
+        "response_length": "0",
+        "contains_primera_federacion": "false",
+        "contains_jornada": "false",
+        "contains_resultados": "false",
+        "contains_team_sequence": "false",
+        "sample_text": "",
+        "notes": f"Focused network comparison stage failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "primerafed_2025_26_network_compare_g1j1_vs_g2j1.csv",
+    network_compare_fields,
+    network_compare_rows,
+)
+
+# Also write root-level copy for easy artifact access.
+root_network_compare_path = Path("primerafed_2025_26_network_compare_g1j1_vs_g2j1.csv")
+
+with root_network_compare_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=network_compare_fields)
+    writer.writeheader()
+    writer.writerows(network_compare_rows)
+
+print("Created focused network comparison: primerafed_2025_26_network_compare_g1j1_vs_g2j1.csv")
