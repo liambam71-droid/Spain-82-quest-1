@@ -3541,3 +3541,256 @@ write_csv(
 )
 
 print(f"RFEF Stage 15 extracted {len(rfef_stage_15_rows)} team page calendar/action rows.")
+# -----------------------------
+# RFEF Stage 16: test whether Primera Federación team codes expose fixtures/results directly
+# -----------------------------
+
+rfef_stage_16_fields = [
+    "team_link_text",
+    "competition_page_code",
+    "team_code",
+    "test_name",
+    "test_url",
+    "http_status",
+    "page_loaded",
+    "contains_primera_federacion",
+    "contains_jornada",
+    "contains_calendario",
+    "contains_resultados",
+    "contains_actas",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "contains_codtemporada",
+    "contains_codjornada",
+    "sample_text",
+    "notes",
+]
+
+rfef_stage_16_rows = []
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    team_links_file = EXPORT_DIR / "rfef_stage_14_primera_federacion_team_links.csv"
+
+    if not team_links_file.exists():
+        rfef_stage_16_rows.append({
+            "team_link_text": "",
+            "competition_page_code": "",
+            "team_code": "",
+            "test_name": "",
+            "test_url": "",
+            "http_status": "",
+            "page_loaded": "false",
+            "contains_primera_federacion": "false",
+            "contains_jornada": "false",
+            "contains_calendario": "false",
+            "contains_resultados": "false",
+            "contains_actas": "false",
+            "contains_codcompeticion": "false",
+            "contains_codgrupo": "false",
+            "contains_codtemporada": "false",
+            "contains_codjornada": "false",
+            "sample_text": "",
+            "notes": "Stage 14 team links file not found. Run Stage 14 first.",
+        })
+
+    else:
+        with team_links_file.open("r", newline="", encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            team_links = list(reader)
+
+        # Use a small sample first so this remains fast.
+        sample_teams = team_links[:5]
+
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+
+            for team in sample_teams:
+                team_link_text = team.get("team_link_text", "")
+                competition_page_code = team.get("competition_page_code", "")
+                team_code = team.get("team_code", "")
+
+                if not competition_page_code or not team_code:
+                    continue
+
+                candidate_urls = [
+                    {
+                        "test_name": "Official RFEF team page",
+                        "test_url": f"https://rfef.es/es/competiciones/primera-federacion/equipo/{competition_page_code}/{team_code}",
+                    },
+                    {
+                        "test_name": "RFEF team calendar guessed route",
+                        "test_url": f"https://rfef.es/es/competiciones/primera-federacion/equipo/{competition_page_code}/{team_code}/calendario",
+                    },
+                    {
+                        "test_name": "RFEF team resultados guessed route",
+                        "test_url": f"https://rfef.es/es/competiciones/primera-federacion/equipo/{competition_page_code}/{team_code}/resultados",
+                    },
+                    {
+                        "test_name": "RFEF team actas guessed route",
+                        "test_url": f"https://rfef.es/es/competiciones/primera-federacion/equipo/{competition_page_code}/{team_code}/actas",
+                    },
+                    {
+                        "test_name": "Marcadores team calendar guessed endpoint",
+                        "test_url": f"https://marcadores.rfef.es/pnfg/NPcd/NFG_VisCalendario_Equipo?cod_primaria=1000120&CodEquipo={team_code}",
+                    },
+                    {
+                        "test_name": "Resultados team calendar guessed endpoint",
+                        "test_url": f"https://resultados.rfef.es/pnfg/NPcd/NFG_VisCalendario_Equipo?cod_primaria=1000120&CodEquipo={team_code}",
+                    },
+                    {
+                        "test_name": "Marcadores team results guessed endpoint",
+                        "test_url": f"https://marcadores.rfef.es/pnfg/NPcd/NFG_Equipo?cod_primaria=1000120&CodEquipo={team_code}",
+                    },
+                    {
+                        "test_name": "Resultados team results guessed endpoint",
+                        "test_url": f"https://resultados.rfef.es/pnfg/NPcd/NFG_Equipo?cod_primaria=1000120&CodEquipo={team_code}",
+                    },
+                ]
+
+                for candidate in candidate_urls:
+                    test_name = candidate["test_name"]
+                    test_url = candidate["test_url"]
+
+                    try:
+                        page = browser.new_page(
+                            user_agent=(
+                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                                "Chrome/120.0.0.0 Safari/537.36"
+                            )
+                        )
+
+                        response = page.goto(test_url, wait_until="networkidle", timeout=60000)
+                        status = response.status if response else ""
+
+                        for selector in [
+                            "text=Aceptar",
+                            "text=ACEPTAR",
+                            "text=Accept",
+                            "button:has-text('Aceptar')",
+                            "button:has-text('ACEPTAR')",
+                        ]:
+                            try:
+                                if page.locator(selector).count() > 0:
+                                    page.locator(selector).first.click(timeout=3000)
+                                    page.wait_for_timeout(2000)
+                                    break
+                            except Exception:
+                                pass
+
+                        page_text = page.inner_text("body")
+                        page_html = page.content()
+
+                        page_text_lower = page_text.lower()
+                        page_html_lower = page_html.lower()
+
+                        safe_name = re.sub(
+                            r"[^A-Za-z0-9]+",
+                            "_",
+                            f"{team_link_text}_{test_name}",
+                        ).strip("_").lower()[:120]
+
+                        html_path = EXPORT_DIR / f"rfef_stage_16_{safe_name}.html"
+                        html_path.write_text(page_html[:500000], encoding="utf-8")
+
+                        sample_text = re.sub(r"\s+", " ", page_text[:4000]).strip()
+
+                        rfef_stage_16_rows.append({
+                            "team_link_text": team_link_text,
+                            "competition_page_code": competition_page_code,
+                            "team_code": team_code,
+                            "test_name": test_name,
+                            "test_url": test_url,
+                            "http_status": str(status),
+                            "page_loaded": "true",
+                            "contains_primera_federacion": str(
+                                "primera federación" in page_text_lower
+                                or "primera federacion" in page_text_lower
+                                or "primera federación" in page_html_lower
+                                or "primera federacion" in page_html_lower
+                            ).lower(),
+                            "contains_jornada": str(
+                                "jornada" in page_text_lower
+                                or "jornada" in page_html_lower
+                            ).lower(),
+                            "contains_calendario": str(
+                                "calendario" in page_text_lower
+                                or "calendario" in page_html_lower
+                            ).lower(),
+                            "contains_resultados": str(
+                                "resultado" in page_text_lower
+                                or "resultados" in page_text_lower
+                                or "resultado" in page_html_lower
+                                or "resultados" in page_html_lower
+                            ).lower(),
+                            "contains_actas": str(
+                                "acta" in page_text_lower
+                                or "actas" in page_text_lower
+                                or "acta" in page_html_lower
+                                or "actas" in page_html_lower
+                            ).lower(),
+                            "contains_codcompeticion": str("codcompeticion" in page_html_lower).lower(),
+                            "contains_codgrupo": str("codgrupo" in page_html_lower).lower(),
+                            "contains_codtemporada": str("codtemporada" in page_html_lower).lower(),
+                            "contains_codjornada": str("codjornada" in page_html_lower).lower(),
+                            "sample_text": sample_text,
+                            "notes": "Team-code route tested.",
+                        })
+
+                        page.close()
+
+                    except Exception as e:
+                        rfef_stage_16_rows.append({
+                            "team_link_text": team_link_text,
+                            "competition_page_code": competition_page_code,
+                            "team_code": team_code,
+                            "test_name": test_name,
+                            "test_url": test_url,
+                            "http_status": "",
+                            "page_loaded": "false",
+                            "contains_primera_federacion": "false",
+                            "contains_jornada": "false",
+                            "contains_calendario": "false",
+                            "contains_resultados": "false",
+                            "contains_actas": "false",
+                            "contains_codcompeticion": "false",
+                            "contains_codgrupo": "false",
+                            "contains_codtemporada": "false",
+                            "contains_codjornada": "false",
+                            "sample_text": "",
+                            "notes": f"Stage 16 route test failed: {type(e).__name__}: {e}",
+                        })
+
+            browser.close()
+
+except Exception as e:
+    rfef_stage_16_rows.append({
+        "team_link_text": "",
+        "competition_page_code": "",
+        "team_code": "",
+        "test_name": "",
+        "test_url": "",
+        "http_status": "",
+        "page_loaded": "false",
+        "contains_primera_federacion": "false",
+        "contains_jornada": "false",
+        "contains_calendario": "false",
+        "contains_resultados": "false",
+        "contains_actas": "false",
+        "contains_codcompeticion": "false",
+        "contains_codgrupo": "false",
+        "contains_codtemporada": "false",
+        "contains_codjornada": "false",
+        "sample_text": "",
+        "notes": f"RFEF Stage 16 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_stage_16_team_code_route_tests.csv",
+    rfef_stage_16_fields,
+    rfef_stage_16_rows,
+)
+
+print(f"RFEF Stage 16 tested {len(rfef_stage_16_rows)} team-code routes.")
