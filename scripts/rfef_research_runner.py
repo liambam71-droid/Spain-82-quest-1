@@ -432,3 +432,242 @@ print("RFEF Research Stage R1 complete.")
 print(f"Scripts scanned: {len(r1_script_rows)}")
 print(f"Keyword matches: {len(r1_match_rows)}")
 print(f"Interesting network responses: {len(r1_network_rows)}")
+# -----------------------------
+# RFEF Research Stage R2:
+# Test exact payloads discovered from marcadores page buttons
+# -----------------------------
+
+import urllib.parse
+
+r2_fields = [
+    "payload_name",
+    "post_data",
+    "response_status",
+    "response_length",
+    "contains_primera_federacion",
+    "contains_liga_regular",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_segunda_division",
+    "contains_play_off",
+    "contains_codcompeticion",
+    "contains_codgrupo",
+    "contains_codtemporada",
+    "sample_text",
+    "notes",
+]
+
+r2_rows = []
+
+r2_payloads = [
+    {
+        "payload_name": "Football masculino resultados exact button",
+        "payload": {
+            "cod_primaria": "3001668",
+            "grupo_categoria": "900163684,901753363",
+            "resultados": "1",
+            "columna": "1",
+            "extendido": "1",
+            "no_paginacion": "1",
+            "tipo_peticion": "2",
+            "N_Ajax": "1",
+        },
+    },
+    {
+        "payload_name": "Football masculino clasificacion exact button",
+        "payload": {
+            "cod_primaria": "3001668",
+            "grupo_categoria": "900163684,901753363",
+            "clasificacion": "1",
+            "columna": "1",
+            "extendido": "1",
+            "no_paginacion": "1",
+            "tipo_competicion": "2",
+            "tipo_peticion": "2",
+            "N_Ajax": "1",
+        },
+    },
+    {
+        "payload_name": "Football masculino/femenino clasificacion exact button",
+        "payload": {
+            "cod_primaria": "3001668",
+            "grupo_categoria": "900163685,900163686",
+            "clasificacion": "1",
+            "columna": "1",
+            "extendido": "1",
+            "no_paginacion": "1",
+            "tipo_competicion": "2",
+            "tipo_peticion": "1",
+            "N_Ajax": "1",
+        },
+    },
+    {
+        "payload_name": "Football masculino/femenino resultados variant",
+        "payload": {
+            "cod_primaria": "3001668",
+            "grupo_categoria": "900163685,900163686",
+            "resultados": "1",
+            "columna": "1",
+            "extendido": "1",
+            "no_paginacion": "1",
+            "tipo_peticion": "1",
+            "N_Ajax": "1",
+        },
+    },
+]
+
+
+def r2_safe_decode(response_body):
+    for encoding in ["utf-8", "latin-1", "cp1252"]:
+        try:
+            return response_body.decode(encoding), encoding
+        except Exception:
+            pass
+    return response_body.decode("utf-8", errors="ignore"), "utf-8-ignore"
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    panel_endpoint = "https://marcadores.rfef.es/pnfg/NPcd/NFG_CMP_Paneles"
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        page.goto("https://marcadores.rfef.es/pnfg/?accion=1", wait_until="networkidle", timeout=60000)
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(2000)
+                    break
+            except Exception:
+                pass
+
+        for payload_item in r2_payloads:
+            payload_name = payload_item["payload_name"]
+            payload = payload_item["payload"]
+            post_data = urllib.parse.urlencode(payload)
+
+            try:
+                response = page.request.post(
+                    panel_endpoint,
+                    headers={
+                        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+                        "X-Requested-With": "XMLHttpRequest",
+                        "Referer": "https://marcadores.rfef.es/pnfg/?accion=1",
+                    },
+                    data=post_data,
+                    timeout=60000,
+                )
+
+                response_text, decode_method = r2_safe_decode(response.body())
+                response_lower = response_text.lower()
+
+                safe_name = re.sub(r"[^A-Za-z0-9]+", "_", payload_name).strip("_").lower()
+                response_path = EXPORT_DIR / f"rfef_research_r2_{safe_name}.html"
+                response_path.write_text(response_text[:1000000], encoding="utf-8")
+
+                sample_text = re.sub(r"<[^>]+>", " ", response_text[:7000])
+                sample_text = re.sub(r"\s+", " ", sample_text).strip()
+
+                r2_rows.append({
+                    "payload_name": payload_name,
+                    "post_data": post_data,
+                    "response_status": str(response.status),
+                    "response_length": str(len(response_text)),
+                    "contains_primera_federacion": str(
+                        "primera federación" in response_lower
+                        or "primera federacion" in response_lower
+                        or "primera federaci" in response_lower
+                    ).lower(),
+                    "contains_liga_regular": str(
+                        "liga regular" in response_lower
+                        or "fase regular" in response_lower
+                    ).lower(),
+                    "contains_grupo_1": str(
+                        "grupo 1" in response_lower
+                        or "grupo i" in response_lower
+                    ).lower(),
+                    "contains_grupo_2": str(
+                        "grupo 2" in response_lower
+                        or "grupo ii" in response_lower
+                    ).lower(),
+                    "contains_segunda_division": str(
+                        "segunda división" in response_lower
+                        or "segunda division" in response_lower
+                    ).lower(),
+                    "contains_play_off": str(
+                        "play off" in response_lower
+                        or "play-off" in response_lower
+                        or "playoff" in response_lower
+                    ).lower(),
+                    "contains_codcompeticion": str("codcompeticion" in response_lower).lower(),
+                    "contains_codgrupo": str("codgrupo" in response_lower).lower(),
+                    "contains_codtemporada": str("codtemporada" in response_lower).lower(),
+                    "sample_text": sample_text,
+                    "notes": f"Exact page-button payload tested. Decode method: {decode_method}",
+                })
+
+            except Exception as e:
+                r2_rows.append({
+                    "payload_name": payload_name,
+                    "post_data": post_data,
+                    "response_status": "",
+                    "response_length": "0",
+                    "contains_primera_federacion": "false",
+                    "contains_liga_regular": "false",
+                    "contains_grupo_1": "false",
+                    "contains_grupo_2": "false",
+                    "contains_segunda_division": "false",
+                    "contains_play_off": "false",
+                    "contains_codcompeticion": "false",
+                    "contains_codgrupo": "false",
+                    "contains_codtemporada": "false",
+                    "sample_text": "",
+                    "notes": f"R2 payload failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    r2_rows.append({
+        "payload_name": "stage_error",
+        "post_data": "",
+        "response_status": "",
+        "response_length": "0",
+        "contains_primera_federacion": "false",
+        "contains_liga_regular": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_segunda_division": "false",
+        "contains_play_off": "false",
+        "contains_codcompeticion": "false",
+        "contains_codgrupo": "false",
+        "contains_codtemporada": "false",
+        "sample_text": "",
+        "notes": f"RFEF Research R2 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r2_exact_payload_tests.csv",
+    r2_fields,
+    r2_rows,
+)
+
+print(f"RFEF Research R2 tested {len(r2_rows)} exact payloads.")
