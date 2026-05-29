@@ -2205,3 +2205,287 @@ write_csv(
 )
 
 print(f"RFEF Research R7 produced {len(r7_rows)} rows.")
+# -----------------------------
+# RFEF Research Stage R8:
+# Diagnose why Grupo 1 Jornada 23+ and Grupo 2 pages are not parsing
+# -----------------------------
+
+r8_fields = [
+    "test_name",
+    "competition_group",
+    "cod_temporada",
+    "cod_competicion",
+    "cod_grupo",
+    "cod_jornada",
+    "source_url",
+    "page_loaded",
+    "page_text_length",
+    "contains_primera_federacion",
+    "contains_grupo_1",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_resultado",
+    "contains_no_data",
+    "candidate_sequence_count",
+    "parsed_fixture_count",
+    "first_80_lines",
+    "notes",
+]
+
+r8_rows = []
+
+r8_tests = [
+    {
+        "test_name": "Grupo 1 Jornada 22 working comparison",
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "cod_jornada": "22",
+    },
+    {
+        "test_name": "Grupo 1 Jornada 23 failing comparison",
+        "competition_group": "Grupo 1",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289296",
+        "cod_jornada": "23",
+    },
+    {
+        "test_name": "Grupo 2 Jornada 1 failing comparison",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "cod_jornada": "1",
+    },
+    {
+        "test_name": "Grupo 2 Jornada 22 comparison",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+        "cod_jornada": "22",
+    },
+]
+
+
+def r8_clean_lines(text):
+    lines = []
+
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+        if cleaned:
+            lines.append(cleaned)
+
+    return lines
+
+
+def r8_is_date(value):
+    return bool(re.match(r"^[0-9]{2}-[0-9]{2}-[0-9]{4}$", value.strip()))
+
+
+def r8_is_time(value):
+    return bool(re.match(r"^[0-9]{1,2}:[0-9]{2}$", value.strip()))
+
+
+def r8_is_score_marker(value):
+    value = value.strip()
+    return bool(
+        value == "-"
+        or re.match(r"^[0-9]{1,2}\s*-\s*[0-9]{1,2}$", value)
+        or re.match(r"^[0-9]{1,2}\s*-$", value)
+        or re.match(r"^-\s*[0-9]{1,2}$", value)
+    )
+
+
+def r8_count_candidate_sequences(lines):
+    count = 0
+
+    for i in range(len(lines)):
+        if i + 5 < len(lines):
+            score_marker = lines[i + 1]
+            date_value = lines[i + 2]
+            time_value = lines[i + 3]
+
+            if (
+                r8_is_score_marker(score_marker)
+                and r8_is_date(date_value)
+                and r8_is_time(time_value)
+            ):
+                count += 1
+
+    return count
+
+
+try:
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        for test in r8_tests:
+            source_url = (
+                "https://resultados.rfef.es/pnfg/NPcd/NFG_CmpJornada"
+                "?cod_primaria=1000120"
+                f"&CodTemporada={test['cod_temporada']}"
+                f"&CodJornada={test['cod_jornada']}"
+                f"&CodCompeticion={test['cod_competicion']}"
+                f"&CodGrupo={test['cod_grupo']}"
+            )
+
+            try:
+                page = browser.new_page(
+                    user_agent=(
+                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                        "AppleWebKit/537.36 (KHTML, like Gecko) "
+                        "Chrome/120.0.0.0 Safari/537.36"
+                    )
+                )
+
+                page.goto(source_url, wait_until="networkidle", timeout=60000)
+
+                for selector in [
+                    "text=Aceptar",
+                    "text=ACEPTAR",
+                    "text=Accept",
+                    "button:has-text('Aceptar')",
+                    "button:has-text('ACEPTAR')",
+                ]:
+                    try:
+                        if page.locator(selector).count() > 0:
+                            page.locator(selector).first.click(timeout=3000)
+                            page.wait_for_timeout(1000)
+                            break
+                    except Exception:
+                        pass
+
+                page_text = page.inner_text("body")
+                page_html = page.content()
+                page_text_lower = page_text.lower()
+                page_html_lower = page_html.lower()
+
+                safe_name = re.sub(
+                    r"[^A-Za-z0-9]+",
+                    "_",
+                    test["test_name"],
+                ).strip("_").lower()
+
+                html_path = EXPORT_DIR / f"rfef_research_r8_{safe_name}.html"
+                html_path.write_text(page_html[:700000], encoding="utf-8")
+
+                text_path = EXPORT_DIR / f"rfef_research_r8_{safe_name}_text.txt"
+                text_path.write_text(page_text[:300000], encoding="utf-8")
+
+                lines = r8_clean_lines(page_text)
+
+                first_80_lines = " | ".join(lines[:80])
+                candidate_sequence_count = r8_count_candidate_sequences(lines)
+
+                contains_no_data = (
+                    "no hay datos" in page_text_lower
+                    or "sin datos" in page_text_lower
+                    or "no existen" in page_text_lower
+                    or "no se encontraron" in page_text_lower
+                    or "no se han encontrado" in page_text_lower
+                )
+
+                r8_rows.append({
+                    "test_name": test["test_name"],
+                    "competition_group": test["competition_group"],
+                    "cod_temporada": test["cod_temporada"],
+                    "cod_competicion": test["cod_competicion"],
+                    "cod_grupo": test["cod_grupo"],
+                    "cod_jornada": test["cod_jornada"],
+                    "source_url": source_url,
+                    "page_loaded": "true",
+                    "page_text_length": str(len(page_text)),
+                    "contains_primera_federacion": str(
+                        "primera federación" in page_text_lower
+                        or "primera federacion" in page_text_lower
+                        or "primera federación" in page_html_lower
+                        or "primera federacion" in page_html_lower
+                    ).lower(),
+                    "contains_grupo_1": str(
+                        "grupo 1" in page_text_lower
+                        or "grupo i" in page_text_lower
+                        or "grupo 1" in page_html_lower
+                        or "grupo i" in page_html_lower
+                    ).lower(),
+                    "contains_grupo_2": str(
+                        "grupo 2" in page_text_lower
+                        or "grupo ii" in page_text_lower
+                        or "grupo 2" in page_html_lower
+                        or "grupo ii" in page_html_lower
+                    ).lower(),
+                    "contains_jornada": str("jornada" in page_text_lower or "jornada" in page_html_lower).lower(),
+                    "contains_resultado": str(
+                        "resultado" in page_text_lower
+                        or "resultados" in page_text_lower
+                        or "resultado" in page_html_lower
+                        or "resultados" in page_html_lower
+                    ).lower(),
+                    "contains_no_data": str(contains_no_data).lower(),
+                    "candidate_sequence_count": str(candidate_sequence_count),
+                    "parsed_fixture_count": str(candidate_sequence_count),
+                    "first_80_lines": first_80_lines[:5000],
+                    "notes": "Diagnostic comparison of working and failing RFEF pages. Full text/html saved.",
+                })
+
+                page.close()
+
+            except Exception as e:
+                r8_rows.append({
+                    "test_name": test["test_name"],
+                    "competition_group": test["competition_group"],
+                    "cod_temporada": test["cod_temporada"],
+                    "cod_competicion": test["cod_competicion"],
+                    "cod_grupo": test["cod_grupo"],
+                    "cod_jornada": test["cod_jornada"],
+                    "source_url": source_url,
+                    "page_loaded": "false",
+                    "page_text_length": "0",
+                    "contains_primera_federacion": "false",
+                    "contains_grupo_1": "false",
+                    "contains_grupo_2": "false",
+                    "contains_jornada": "false",
+                    "contains_resultado": "false",
+                    "contains_no_data": "false",
+                    "candidate_sequence_count": "0",
+                    "parsed_fixture_count": "0",
+                    "first_80_lines": "",
+                    "notes": f"R8 diagnostic failed: {type(e).__name__}: {e}",
+                })
+
+        browser.close()
+
+except Exception as e:
+    r8_rows.append({
+        "test_name": "stage_error",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "source_url": "",
+        "page_loaded": "false",
+        "page_text_length": "0",
+        "contains_primera_federacion": "false",
+        "contains_grupo_1": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_resultado": "false",
+        "contains_no_data": "false",
+        "candidate_sequence_count": "0",
+        "parsed_fixture_count": "0",
+        "first_80_lines": "",
+        "notes": f"RFEF Research R8 failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "rfef_research_r8_failed_page_diagnostics.csv",
+    r8_fields,
+    r8_rows,
+)
+
+print(f"RFEF Research R8 produced {len(r8_rows)} diagnostic rows.")
