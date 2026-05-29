@@ -3794,3 +3794,207 @@ write_csv(
 )
 
 print(f"RFEF Stage 16 tested {len(rfef_stage_16_rows)} team-code routes.")
+# -----------------------------
+# RFEF Stage 17: create extraction status/audit note
+# -----------------------------
+
+from datetime import datetime, timezone
+
+rfef_audit_note = f"""# RFEF Primera Federación Extraction Status Note
+
+Generated at: {datetime.now(timezone.utc).isoformat()}
+
+## Purpose
+
+This note records the current status of the RFEF / Primera Federación extraction work for the Spain 82 app database.
+
+The LaLiga extraction route is working and has already produced clean app-ready files for:
+
+- Primera División regular seasons
+- Segunda División regular seasons
+- Segunda División promotion playoffs where confirmed
+
+The remaining unresolved fixture/results extraction work is for:
+
+- Primera Federación Group 1
+- Primera Federación Group 2
+- Primera Federación promotion playoffs where relevant
+
+## What has worked
+
+### 1. Browser-based RFEF access works
+
+A Playwright browser session can open RFEF pages successfully.
+
+The cookie wall issue has been bypassed through browser-session loading.
+
+### 2. RFEF current Primera Federación team discovery works
+
+The official RFEF Primera Federación competition page can be opened:
+
+- `https://rfef.es/es/competiciones/primera-federacion`
+
+From this page, the script extracted 40 team links.
+
+This confirms the current structure:
+
+- 20 teams in Group 1
+- 20 teams in Group 2
+
+The team links use the visible competition page code:
+
+- `2468`
+
+Example team-link structure:
+
+- `/competiciones/primera-federacion/equipo/2468/[team_code]`
+
+This is useful for the teams/club database work.
+
+### 3. The hidden RFEF panel endpoint has been identified
+
+The browser network capture identified this important endpoint:
+
+- `https://marcadores.rfef.es/pnfg/NPcd/NFG_CMP_Paneles`
+
+A working POST payload was captured:
+
+- `cod_primaria=3001668`
+- `grupo_categoria=900163685,900163686`
+- `resultados=1`
+- `columna=1`
+- `extendido=1`
+- `no_paginacion=1`
+- `tipo_peticion=1`
+- `N_Ajax=1`
+
+This endpoint returns competition panel data and contains internal RFEF code links.
+
+## What has not yet worked
+
+### 1. Regular Primera Federación fixture/result codes have not been found
+
+The discovered RFEF panel/code searches exposed codes for:
+
+- Segunda División
+- Play Off Primera Federación
+- Play Off Ascenso a Primera Federación
+
+But they did not expose the regular-season Primera Federación Group 1 and Group 2 codes.
+
+The repeated discovered code sets were:
+
+- `23289293 / 23289294` = Segunda División - Hypermotion
+- `23289454 / 23289455` = Play Off Primera Federación
+- `23289468 / 23289469` = Play Off Ascenso a Primera Federación
+
+These are useful, but they are not the regular Primera Federación Group 1 and Group 2 competition/group codes.
+
+### 2. RFEF team pages do not expose fixture codes
+
+The official team pages load successfully, but they do not expose:
+
+- `CodCompeticion`
+- `CodGrupo`
+- `CodTemporada`
+- `CodJornada`
+
+They contain generic navigation such as:
+
+- Agenda
+- RFEF.TV
+- Actas
+- Calendario y TV
+
+but not the hidden fixture/result parameters required for extraction.
+
+### 3. Guessed team-calendar routes did not work
+
+Guessed routes such as:
+
+- `/calendario`
+- `/resultados`
+- `/actas`
+
+returned 404 or did not expose useful fixture data.
+
+Likewise, guessed marcadores/resultados team-code endpoints did not expose fixture/result codes.
+
+## Current blocker
+
+The technical blocker is:
+
+> We still need the correct RFEF internal parameters for regular Primera Federación Group 1 and Group 2.
+
+Specifically:
+
+- `CodTemporada`
+- `CodCompeticion`
+- `CodGrupo`
+- `CodJornada`
+
+for the regular-season Primera Federación groups.
+
+Without these, the script cannot yet extract Primera Federación fixture/results data from RFEF in the same clean way as LaLiga.
+
+## Current recommendation
+
+The next RFEF work should not continue by guessing individual URLs.
+
+The next technical investigation should focus on one of these routes:
+
+### Option A: deeper browser interaction
+
+Use Playwright to interact with the RFEF marcadores page as a real user would, including clicking through category panels, tabs, competitions or hidden accordions, then capture the resulting network calls.
+
+### Option B: inspect RFEF JavaScript bundles
+
+Identify JavaScript files loaded by `marcadores.rfef.es` and search them for:
+
+- `grupo_categoria`
+- `cod_primaria`
+- `CodCompeticion`
+- `CodGrupo`
+- `NFG_CMP_Paneles`
+- category group mappings
+
+### Option C: use RFEF for validation but add another reputable fixture source for extraction
+
+If RFEF’s internal codes remain hidden, the production database may need to extract Primera Federación fixtures from another reputable football-data source, while retaining RFEF pages as the official validation/audit reference.
+
+## Recommended project status
+
+LaLiga production extraction is complete and app-test ready.
+
+RFEF Primera Federación extraction is not yet production-ready.
+
+Current status:
+
+- LaLiga fixture extraction: complete
+- LaLiga team index: complete
+- LaLiga regional tagging: complete
+- RFEF team discovery: working
+- RFEF regular fixture extraction: blocked pending code discovery
+
+## Files generated during RFEF investigation
+
+Useful outputs include:
+
+- `rfef_browser_session_test.csv`
+- `rfef_code_discovery_candidates.csv`
+- `rfef_code_set_test_results.csv`
+- `rfef_primera_federacion_competition_page_candidates.csv`
+- `rfef_stage_14_primera_federacion_team_links.csv`
+- `rfef_stage_16_team_code_route_tests.csv`
+
+## Next recommended practical action
+
+Create a separate, cleaner RFEF research branch or script that focuses only on the hidden `NFG_CMP_Paneles` flow and JavaScript/network interaction.
+
+Do not keep adding speculative blocks indefinitely to the current discovery runner without pruning, because the workflow and output artifacts will become too noisy.
+"""
+
+audit_note_path = EXPORT_DIR / "rfef_primera_federacion_extraction_status_note.md"
+audit_note_path.write_text(rfef_audit_note, encoding="utf-8")
+
+print("RFEF Stage 17 extraction status note created.")
