@@ -294,7 +294,7 @@ latest_by_key = {
 updated_rows = []
 updated_score_count = 0
 added_fixture_count = 0
-
+score_change_audit_rows = []
 existing_ids = set()
 
 for current in current_rows:
@@ -324,9 +324,25 @@ for current in current_rows:
                 current[field] = latest[field]
 
         after_score = (current.get("home_score", ""), current.get("away_score", ""))
-
-        if before_score != after_score:
+if before_score != after_score:
             updated_score_count += 1
+
+            score_change_audit_rows.append({
+                "fixture_id": current.get("fixture_id", ""),
+                "season_id": current.get("season_id", ""),
+                "competition_group": current.get("competition_group", ""),
+                "matchday": current.get("matchday", ""),
+                "fixture_date": current.get("fixture_date", ""),
+                "home_team_name_source": current.get("home_team_name_source", ""),
+                "away_team_name_source": current.get("away_team_name_source", ""),
+                "old_home_score": before_score[0],
+                "old_away_score": before_score[1],
+                "new_home_score": after_score[0],
+                "new_away_score": after_score[1],
+                "latest_source_url": latest.get("source_url", ""),
+                "latest_data_confidence": latest.get("data_confidence", ""),
+                "audit_note": "Score changed during refresh. Review before committing refreshed current files.",
+            })
 
     updated_rows.append(current)
 
@@ -365,7 +381,22 @@ for latest in latest_normalised:
 team_index_rows = build_team_index(updated_rows)
 
 validation_fields = ["check_name", "result", "details"]
-
+score_change_audit_fields = [
+    "fixture_id",
+    "season_id",
+    "competition_group",
+    "matchday",
+    "fixture_date",
+    "home_team_name_source",
+    "away_team_name_source",
+    "old_home_score",
+    "old_away_score",
+    "new_home_score",
+    "new_away_score",
+    "latest_source_url",
+    "latest_data_confidence",
+    "audit_note",
+]
 fixture_ids = [row.get("fixture_id", "") for row in updated_rows]
 duplicate_fixture_ids = sorted([fid for fid in set(fixture_ids) if fixture_ids.count(fid) > 1])
 
@@ -479,7 +510,17 @@ write_csv(
     validation_fields,
     validation_rows,
 )
+write_csv(
+    EXPORT_DIR / "primerafed_2025_26_score_change_audit.csv",
+    score_change_audit_fields,
+    score_change_audit_rows,
+)
 
+write_csv(
+    Path("primerafed_2025_26_score_change_audit.csv"),
+    score_change_audit_fields,
+    score_change_audit_rows,
+)
 print("Primera Federación current file refresh complete.")
 print(f"Updated fixture rows: {len(updated_rows)}")
 print(f"Updated team index rows: {len(team_index_rows)}")
