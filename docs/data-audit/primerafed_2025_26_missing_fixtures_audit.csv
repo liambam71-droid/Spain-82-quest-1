@@ -1,0 +1,3 @@
+season_id,competition_id,competition_name,competition_group,fixture_phase,matchday,round_label,missing_fixture_count,reason,recommended_action
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 1,regular_season,37,Jornada 37,10,Not exposed by tested RFEF result or calendar routes at extraction time.,Re-test RFEF later or fill from secondary source.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 1,regular_season,38,Jornada 38,10,Not exposed by tested RFEF result or calendar routes at extraction time.,Re-test RFEF later or fill from secondary source.

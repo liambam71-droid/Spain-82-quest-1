@@ -1,0 +1,13 @@
+check_name,result,details
+final_fixture_rows,740,Expected 740: Grupo 1 J1-36 plus Grupo 2 J1-38.
+final_team_fixture_index_rows,1480,Expected 1480.
+final_grupo1_fixture_rows,360,Expected 360.
+final_grupo2_fixture_rows,380,Expected 380.
+duplicate_fixture_ids,0,
+duplicate_team_fixture_ids,0,
+unexpected_group_matchday_counts,0,
+known_missing_fixture_rows,20,Grupo 1 Jornada 37 and Jornada 38 remain missing.
+partial_scores_removed_by_QA,105,Rows had exactly one score value; both score fields blanked as ambiguous scheduled fixtures.
+remaining_partial_score_rows,0,Expected 0 after QA clean.
+played_rows_with_two_scores,39,Rows where both scores are present.
+scheduled_rows,701,
