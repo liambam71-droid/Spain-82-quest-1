@@ -2481,5 +2481,524 @@ for filename in [
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 print("Created Grupo 1 calendar recovery outputs.")
+# -----------------------------
+# Grupo 2 calendar parser:
+# Use successful marcadores calendar-view route to recover Grupo 2 fixtures
+# -----------------------------
 
+grupo2_calendar_fields = raw_fields
+grupo2_calendar_rows = []
+
+
+def fetch_primerafed_team_names_from_rfef(page):
+    """
+    Pull known Primera Federación team names from the official RFEF competition page.
+    We use these as anchors to split calendar-view fixture lines into home/away teams.
+    """
+    competition_page_url = "https://rfef.es/es/competiciones/primera-federacion"
+
+    page.goto(competition_page_url, wait_until="networkidle", timeout=60000)
+    page.wait_for_timeout(2000)
+
+    page_html = page.content()
+
+    link_matches = re.findall(
+        r'<a[^>]+href=["\']([^"\']*?/competiciones/primera-federacion/equipo/2468/[0-9]+[^"\']*)["\'][^>]*>(.*?)</a>',
+        page_html,
+        re.IGNORECASE | re.DOTALL,
+    )
+
+    team_names = []
+
+    for href, raw_text in link_matches:
+        label = re.sub(r"<[^>]+>", " ", raw_text)
+        label = re.sub(r"\s+", " ", label).strip()
+
+        if label and label not in team_names:
+            team_names.append(label)
+
+    # Longest first avoids partial-name matches.
+    return sorted(team_names, key=len, reverse=True)
+
+
+def grupo2_calendar_clean_lines(text):
+    lines = []
+
+    for line in text.splitlines():
+        cleaned = re.sub(r"\s+", " ", line).strip()
+
+        if not cleaned:
+            continue
+
+        if cleaned in {
+            "Competiciones",
+            "Acciones",
+            "Ver Clasificación Tabla Goleadores Tabla Porteros Ver Tabla Cruzada Versión Extendida",
+            "Primera Vuelta",
+            "Segunda Vuelta",
+            "Calendario",
+            "Clasificación",
+            "Tabla Cruzada",
+            "Goleadores",
+            "Porteros",
+        }:
+            continue
+
+        if cleaned.startswith("Campeonato Nacional de Liga de Primera Federación"):
+            continue
+
+        if cleaned.startswith("Temporada "):
+            continue
+
+        if "Búsqueda por competición" in cleaned:
+            continue
+
+        lines.append(cleaned)
+
+    return lines
+
+
+def grupo2_extract_calendar_jornada_block(lines, jornada_number):
+    start_index = None
+    fixture_date = ""
+
+    jornada_pattern = re.compile(
+        rf"^Jornada\s+{jornada_number}\s+\(([0-9]{{2}}-[0-9]{{2}}-[0-9]{{4}})\)$",
+        re.IGNORECASE,
+    )
+
+    for index, line in enumerate(lines):
+        match = jornada_pattern.match(line)
+        if match:
+            start_index = index + 1
+            fixture_date = normalise_date(match.group(1))
+            break
+
+    if start_index is None:
+        return "", []
+
+    end_index = len(lines)
+
+    for index in range(start_index, len(lines)):
+        if re.match(r"^Jornada\s+[0-9]+\s+\([0-9]{2}-[0-9]{2}-[0-9]{4}\)$", lines[index], re.IGNORECASE):
+            end_index = index
+            break
+
+    return fixture_date, lines[start_index:end_index]
+
+
+def grupo2_parse_calendar_score_middle(middle_text):
+    middle_text = re.sub(r"\s+", " ", middle_text).strip()
+
+    if not middle_text:
+        return "", ""
+
+    two_score = re.match(r"^([0-9]{1,2})\s+([0-9]{1,2})$", middle_text)
+    if two_score:
+        return two_score.group(1), two_score.group(2)
+
+    # Single numbers in this calendar layout are ambiguous, so do not treat as a score.
+    return "", ""
+
+
+def grupo2_parse_calendar_match_line(line, known_teams):
+    cleaned = re.sub(r"\s+", " ", line).strip()
+
+    for home_team in known_teams:
+        if not cleaned.startswith(home_team + " "):
+            continue
+
+        remainder = cleaned[len(home_team):].strip()
+
+        for away_team in known_teams:
+            if away_team == home_team:
+                continue
+
+            if remainder == away_team:
+                return home_team, away_team, "", ""
+
+            if remainder.endswith(" " + away_team):
+                middle = remainder[: -len(away_team)].strip()
+                home_score, away_score = grupo2_parse_calendar_score_middle(middle)
+                return home_team, away_team, home_score, away_score
+
+    return "", "", "", ""
+
+
+try:
+    grupo2_calendar_group = {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_level": "3",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+    }
+
+    existing_fixture_ids = set(
+        row.get("fixture_id", "")
+        for row in fixture_rows
+        if row.get("fixture_id")
+    )
+
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        known_teams = fetch_primerafed_team_names_from_rfef(page)
+
+        # Establish RFEF marcadores session.
+        page.goto(
+            "https://marcadores.rfef.es/pnfg/?accion=1",
+            wait_until="networkidle",
+            timeout=60000,
+        )
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(1000)
+                    break
+            except Exception:
+                pass
+
+        # Use the exact successful route shape found by the Grupo 2 route matrix:
+        # host = marcadores.rfef.es
+        # route = NFG_VisCalendario_Vis
+        # cod_primaria = 1000120
+        # parameter_style = lower_all
+        calendar_url = (
+            "https://marcadores.rfef.es/pnfg/NPcd/NFG_VisCalendario_Vis"
+            "?cod_primaria=1000120"
+            f"&codtemporada={grupo2_calendar_group['cod_temporada']}"
+            "&codjornada=1"
+            f"&codcompeticion={grupo2_calendar_group['cod_competicion']}"
+            f"&codgrupo={grupo2_calendar_group['cod_grupo']}"
+        )
+
+        page.goto(calendar_url, wait_until="networkidle", timeout=60000)
+        page.wait_for_timeout(4000)
+
+        calendar_text = page.inner_text("body")
+        calendar_html = page.content()
+
+        (EXPORT_DIR / "primerafed_grupo2_success_calendar_text.txt").write_text(
+            calendar_text[:700000],
+            encoding="utf-8",
+        )
+
+        (EXPORT_DIR / "primerafed_grupo2_success_calendar.html").write_text(
+            calendar_html[:1000000],
+            encoding="utf-8",
+        )
+
+        calendar_lines = grupo2_calendar_clean_lines(calendar_text)
+
+        for jornada in range(1, 39):
+            matchday = str(jornada)
+            fixture_date, jornada_lines = grupo2_extract_calendar_jornada_block(calendar_lines, matchday)
+
+            fixture_index = 0
+
+            for line in jornada_lines:
+                home_team, away_team, home_score, away_score = grupo2_parse_calendar_match_line(line, known_teams)
+
+                if not home_team or not away_team:
+                    continue
+
+                raw_row = {
+                    "season_id": grupo2_calendar_group["season_id"],
+                    "competition_id": grupo2_calendar_group["competition_id"],
+                    "competition_name": grupo2_calendar_group["competition_name"],
+                    "competition_group": grupo2_calendar_group["competition_group"],
+                    "cod_temporada": grupo2_calendar_group["cod_temporada"],
+                    "cod_competicion": grupo2_calendar_group["cod_competicion"],
+                    "cod_grupo": grupo2_calendar_group["cod_grupo"],
+                    "cod_jornada": matchday,
+                    "fixture_index": str(fixture_index),
+                    "source_url": calendar_url,
+                    "home_team_name_source": home_team,
+                    "away_team_name_source": away_team,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "fixture_date": fixture_date,
+                    "kickoff_time_local": "",
+                    "venue_name_source": "",
+                    "referee": "",
+                    "raw_sequence": line,
+                    "data_confidence": "high" if fixture_date else "needs_review",
+                    "notes": "Recovered from RFEF marcadores Grupo 2 calendar-view layout.",
+                }
+
+                grupo2_calendar_rows.append(raw_row)
+
+                home_team_id = make_team_id(home_team)
+                away_team_id = make_team_id(away_team)
+
+                fixture_id = make_fixture_id(
+                    grupo2_calendar_group["season_id"],
+                    grupo2_calendar_group["competition_id"],
+                    grupo2_calendar_group["competition_group"],
+                    matchday,
+                    home_team_id,
+                    away_team_id,
+                )
+
+                if fixture_id not in existing_fixture_ids:
+                    result_status = "played" if home_score != "" and away_score != "" else "scheduled"
+
+                    fixture_rows.append({
+                        "fixture_id": fixture_id,
+                        "season_id": grupo2_calendar_group["season_id"],
+                        "competition_id": grupo2_calendar_group["competition_id"],
+                        "competition_name": grupo2_calendar_group["competition_name"],
+                        "competition_level": grupo2_calendar_group["competition_level"],
+                        "competition_group": grupo2_calendar_group["competition_group"],
+                        "fixture_phase": "regular_season",
+                        "matchday": matchday,
+                        "round_label": f"Jornada {matchday}",
+                        "fixture_date": fixture_date,
+                        "kickoff_time_local": "",
+                        "home_team_id": home_team_id,
+                        "home_team_name_source": home_team,
+                        "away_team_id": away_team_id,
+                        "away_team_name_source": away_team,
+                        "home_score": home_score,
+                        "away_score": away_score,
+                        "result_status": result_status,
+                        "venue_id": "",
+                        "venue_name_source": "",
+                        "attendance": "",
+                        "referee": "",
+                        "match_report_url": "",
+                        "rfef_acta_url": "",
+                        "laliga_match_url": "",
+                        "source_system": "RFEF",
+                        "source_url": calendar_url,
+                        "source_retrieved_at": NOW,
+                        "data_confidence": raw_row["data_confidence"],
+                        "notes": "Recovered from RFEF marcadores Grupo 2 calendar-view layout.",
+                    })
+
+                    team_index_rows.append({
+                        "team_fixture_id": f"{fixture_id}__{home_team_id}",
+                        "fixture_id": fixture_id,
+                        "team_id": home_team_id,
+                        "season_id": grupo2_calendar_group["season_id"],
+                        "competition_id": grupo2_calendar_group["competition_id"],
+                        "competition_name": grupo2_calendar_group["competition_name"],
+                        "competition_group": grupo2_calendar_group["competition_group"],
+                        "fixture_phase": "regular_season",
+                        "matchday": matchday,
+                        "fixture_date": fixture_date,
+                        "opponent_team_id": away_team_id,
+                        "home_or_away": "Home",
+                        "team_score": home_score,
+                        "opponent_score": away_score,
+                        "result_for_team": result_for_team(home_score, away_score),
+                        "venue_id": "",
+                        "is_home_ground": "true",
+                        "team_autonomous_region_id": "",
+                        "team_autonomous_region_name": "",
+                        "team_autonomous_region_slug": "",
+                        "opponent_autonomous_region_id": "",
+                        "opponent_autonomous_region_name": "",
+                        "opponent_autonomous_region_slug": "",
+                        "source_url": calendar_url,
+                    })
+
+                    team_index_rows.append({
+                        "team_fixture_id": f"{fixture_id}__{away_team_id}",
+                        "fixture_id": fixture_id,
+                        "team_id": away_team_id,
+                        "season_id": grupo2_calendar_group["season_id"],
+                        "competition_id": grupo2_calendar_group["competition_id"],
+                        "competition_name": grupo2_calendar_group["competition_name"],
+                        "competition_group": grupo2_calendar_group["competition_group"],
+                        "fixture_phase": "regular_season",
+                        "matchday": matchday,
+                        "fixture_date": fixture_date,
+                        "opponent_team_id": home_team_id,
+                        "home_or_away": "Away",
+                        "team_score": away_score,
+                        "opponent_score": home_score,
+                        "result_for_team": result_for_team(away_score, home_score),
+                        "venue_id": "",
+                        "is_home_ground": "false",
+                        "team_autonomous_region_id": "",
+                        "team_autonomous_region_name": "",
+                        "team_autonomous_region_slug": "",
+                        "opponent_autonomous_region_id": "",
+                        "opponent_autonomous_region_name": "",
+                        "opponent_autonomous_region_slug": "",
+                        "source_url": calendar_url,
+                    })
+
+                    existing_fixture_ids.add(fixture_id)
+
+                fixture_index += 1
+
+        browser.close()
+
+except Exception as e:
+    grupo2_calendar_rows.append({
+        "season_id": "",
+        "competition_id": "",
+        "competition_name": "",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "fixture_index": "",
+        "source_url": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "venue_name_source": "",
+        "referee": "",
+        "raw_sequence": "",
+        "data_confidence": "failed",
+        "notes": f"Grupo 2 calendar parser failed: {type(e).__name__}: {e}",
+    })
+
+
+write_csv(
+    "primerafed_2025_26_grupo2_calendar_recovered_raw.csv",
+    grupo2_calendar_fields,
+    grupo2_calendar_rows,
+)
+
+write_csv(
+    "primerafed_2025_26_fixtures_results_rfeffed_final_candidate.csv",
+    fixture_fields,
+    fixture_rows,
+)
+
+write_csv(
+    "primerafed_2025_26_team_fixture_index_rfeffed_final_candidate.csv",
+    team_index_fields,
+    team_index_rows,
+)
+
+
+# Final candidate validation after Grupo 2 calendar recovery
+final_candidate_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+final_grupo_1_rows = [
+    row for row in fixture_rows
+    if row.get("competition_group") == "Grupo 1"
+]
+
+final_grupo_2_rows = [
+    row for row in fixture_rows
+    if row.get("competition_group") == "Grupo 2"
+]
+
+grupo2_calendar_non_failed = [
+    row for row in grupo2_calendar_rows
+    if row.get("data_confidence") != "failed"
+]
+
+grupo2_calendar_counts = {}
+
+for row in grupo2_calendar_non_failed:
+    key = f"J{row.get('cod_jornada')}"
+    grupo2_calendar_counts[key] = grupo2_calendar_counts.get(key, 0) + 1
+
+grupo2_unexpected_counts = [
+    f"{key}={count}"
+    for key, count in sorted(grupo2_calendar_counts.items())
+    if count != 10
+]
+
+final_fixture_ids = [
+    row.get("fixture_id", "")
+    for row in fixture_rows
+    if row.get("fixture_id")
+]
+
+final_duplicate_fixture_ids = sorted([
+    fixture_id for fixture_id in set(final_fixture_ids)
+    if final_fixture_ids.count(fixture_id) > 1
+])
+
+final_candidate_validation_rows = [
+    {
+        "check_name": "grupo2_calendar_recovered_non_failed_rows",
+        "result": str(len(grupo2_calendar_non_failed)),
+        "details": "Expected 380 if Grupo 2 J1-38 all parse.",
+    },
+    {
+        "check_name": "final_candidate_fixture_rows",
+        "result": str(len(fixture_rows)),
+        "details": "Expected 740 if Grupo 1 J1-36 plus Grupo 2 J1-38 are present. Full target remains 760 once Grupo 1 J37-38 are available.",
+    },
+    {
+        "check_name": "final_candidate_grupo_1_fixture_rows",
+        "result": str(len(final_grupo_1_rows)),
+        "details": "Expected 360 currently; full target 380.",
+    },
+    {
+        "check_name": "final_candidate_grupo_2_fixture_rows",
+        "result": str(len(final_grupo_2_rows)),
+        "details": "Expected 380.",
+    },
+    {
+        "check_name": "grupo2_calendar_unexpected_jornada_counts",
+        "result": str(len(grupo2_unexpected_counts)),
+        "details": "|".join(grupo2_unexpected_counts),
+    },
+    {
+        "check_name": "final_candidate_duplicate_fixture_ids",
+        "result": str(len(final_duplicate_fixture_ids)),
+        "details": "|".join(final_duplicate_fixture_ids),
+    },
+]
+
+write_csv(
+    "primerafed_2025_26_final_candidate_validation.csv",
+    final_candidate_validation_fields,
+    final_candidate_validation_rows,
+)
+
+# Root-level copies for easy artifact access.
+for filename in [
+    "primerafed_2025_26_grupo2_calendar_recovered_raw.csv",
+    "primerafed_2025_26_fixtures_results_rfeffed_final_candidate.csv",
+    "primerafed_2025_26_team_fixture_index_rfeffed_final_candidate.csv",
+    "primerafed_2025_26_final_candidate_validation.csv",
+]:
+    src = EXPORT_DIR / filename
+    dst = Path(filename)
+
+    if src.exists():
+        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+print("Created Grupo 2 calendar recovery and final candidate outputs.")
 
