@@ -331,11 +331,30 @@ for current in current_rows:
     updated_rows.append(current)
 
 
-# Add any completely new fixtures, e.g. missing Grupo 1 J37-J38 once discovered.
+# Add only genuinely missing known-tail fixtures.
+# Safety rule:
+# - The current 2025-26 file already contains Grupo 1 J1-36 and Grupo 2 J1-38.
+# - Do not add any "new" Grupo 2 fixtures during refresh, because slightly different IDs
+#   can create duplicates.
+# - Only allow new additions for the known missing Grupo 1 Jornadas 37 and 38.
+
+allowed_new_fixture_keys = {
+    "Grupo 1|37",
+    "Grupo 1|38",
+}
+
 for latest in latest_normalised:
     fixture_id = latest.get("fixture_id", "")
 
     if not fixture_id or fixture_id in existing_ids:
+        continue
+
+    competition_group = latest.get("competition_group", "")
+    matchday = str(latest.get("matchday", ""))
+
+    allowed_key = f"{competition_group}|{matchday}"
+
+    if allowed_key not in allowed_new_fixture_keys:
         continue
 
     updated_rows.append({field: latest.get(field, "") for field in fixture_fields})
@@ -365,7 +384,20 @@ unexpected_counts = [
     for key, count in sorted(counts_by_group_matchday.items())
     if count != 10
 ]
+blocked_new_fixture_candidates = []
 
+for latest in latest_normalised:
+    fixture_id = latest.get("fixture_id", "")
+
+    if not fixture_id or fixture_id in existing_ids:
+        continue
+
+    competition_group = latest.get("competition_group", "")
+    matchday = str(latest.get("matchday", ""))
+    allowed_key = f"{competition_group}|{matchday}"
+
+    if allowed_key not in allowed_new_fixture_keys:
+        blocked_new_fixture_candidates.append(f"{allowed_key}|{fixture_id}")
 validation_rows = [
     {
         "check_name": "current_input_rows",
@@ -393,7 +425,11 @@ validation_rows = [
         "details": "Fixtures where scores changed from the current file.",
     },
     {
-        "check_name": "new_fixtures_added",
+        "check_name": "new_fixtures_added",  {
+        "check_name": "blocked_new_fixture_candidates",
+        "result": str(len(blocked_new_fixture_candidates)),
+        "details": "|".join(blocked_new_fixture_candidates[:100]),
+    },
         "result": str(added_fixture_count),
         "details": "Should become 20 when Grupo 1 J37-J38 are added.",
     },
