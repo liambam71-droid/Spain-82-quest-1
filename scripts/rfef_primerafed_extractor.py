@@ -3001,4 +3001,143 @@ for filename in [
         dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
 print("Created Grupo 2 calendar recovery and final candidate outputs.")
+# -----------------------------
+# Grupo 2 calendar text inspection summary
+# Create upload-friendly CSV from saved successful Grupo 2 calendar text/html
+# -----------------------------
 
+grupo2_text_inspection_fields = [
+    "source_file",
+    "file_exists",
+    "text_length",
+    "line_count",
+    "first_200_lines",
+    "contains_primera_federacion",
+    "contains_grupo_2",
+    "contains_jornada",
+    "contains_resultados",
+    "contains_calendario",
+    "contains_dates",
+    "contains_times",
+    "contains_team_like_lines",
+    "candidate_team_lines",
+    "notes",
+]
+
+grupo2_text_inspection_rows = []
+
+try:
+    source_candidates = [
+        "primerafed_grupo2_success_calendar_text.txt",
+    ]
+
+    for source_filename in source_candidates:
+        source_path = EXPORT_DIR / source_filename
+
+        file_exists = source_path.exists()
+        text = ""
+
+        if file_exists:
+            text = source_path.read_text(encoding="utf-8", errors="ignore")
+
+        text_lower = text.lower()
+
+        lines = [
+            re.sub(r"\s+", " ", line).strip()
+            for line in text.splitlines()
+            if re.sub(r"\s+", " ", line).strip()
+        ]
+
+        date_lines = [
+            line for line in lines
+            if re.search(r"[0-9]{2}-[0-9]{2}-[0-9]{4}", line)
+        ]
+
+        time_lines = [
+            line for line in lines
+            if re.search(r"\b[0-9]{1,2}:[0-9]{2}\b", line)
+        ]
+
+        # Loose team-line candidates: lines that are not obvious headers and are reasonably long.
+        team_like_lines = []
+        for line in lines:
+            lower = line.lower()
+
+            if (
+                "jornada" in lower
+                or "temporada" in lower
+                or "calendario" in lower
+                or "clasificación" in lower
+                or "clasificacion" in lower
+                or "goleadores" in lower
+                or "porteros" in lower
+                or "competiciones" in lower
+                or "acciones" in lower
+            ):
+                continue
+
+            if len(line) >= 15:
+                team_like_lines.append(line)
+
+        grupo2_text_inspection_rows.append({
+            "source_file": source_filename,
+            "file_exists": str(file_exists).lower(),
+            "text_length": str(len(text)),
+            "line_count": str(len(lines)),
+            "first_200_lines": " | ".join(lines[:200])[:12000],
+            "contains_primera_federacion": str(
+                "primera federación" in text_lower
+                or "primera federacion" in text_lower
+                or "primera federaci" in text_lower
+            ).lower(),
+            "contains_grupo_2": str(
+                "grupo 2" in text_lower
+                or "grupo ii" in text_lower
+            ).lower(),
+            "contains_jornada": str("jornada" in text_lower).lower(),
+            "contains_resultados": str(
+                "resultado" in text_lower
+                or "resultados" in text_lower
+            ).lower(),
+            "contains_calendario": str("calendario" in text_lower).lower(),
+            "contains_dates": str(len(date_lines) > 0).lower(),
+            "contains_times": str(len(time_lines) > 0).lower(),
+            "contains_team_like_lines": str(len(team_like_lines) > 0).lower(),
+            "candidate_team_lines": " | ".join(team_like_lines[:150])[:12000],
+            "notes": "Upload-friendly inspection summary for Grupo 2 successful calendar text.",
+        })
+
+except Exception as e:
+    grupo2_text_inspection_rows.append({
+        "source_file": "",
+        "file_exists": "false",
+        "text_length": "0",
+        "line_count": "0",
+        "first_200_lines": "",
+        "contains_primera_federacion": "false",
+        "contains_grupo_2": "false",
+        "contains_jornada": "false",
+        "contains_resultados": "false",
+        "contains_calendario": "false",
+        "contains_dates": "false",
+        "contains_times": "false",
+        "contains_team_like_lines": "false",
+        "candidate_team_lines": "",
+        "notes": f"Grupo 2 text inspection failed: {type(e).__name__}: {e}",
+    })
+
+write_csv(
+    "primerafed_2025_26_grupo2_calendar_text_inspection.csv",
+    grupo2_text_inspection_fields,
+    grupo2_text_inspection_rows,
+)
+
+# Root-level copy for easy artifact access.
+root_grupo2_text_inspection_path = Path("primerafed_2025_26_grupo2_calendar_text_inspection.csv")
+
+with root_grupo2_text_inspection_path.open("w", newline="", encoding="utf-8") as f:
+    writer = csv.DictWriter(f, fieldnames=grupo2_text_inspection_fields)
+    writer.writeheader()
+    writer.writerows(grupo2_text_inspection_rows)
+
+print("Created Grupo 2 calendar text inspection CSV.")
