@@ -425,13 +425,14 @@ validation_rows = [
         "details": "Fixtures where scores changed from the current file.",
     },
     {
-        "check_name": "new_fixtures_added",  {
+        "check_name": "new_fixtures_added", 
+        "result": str(added_fixture_count),
+        "details": "Should become 20 when Grupo 1 J37-J38 are added.",
+    },
+    {
         "check_name": "blocked_new_fixture_candidates",
         "result": str(len(blocked_new_fixture_candidates)),
         "details": "|".join(blocked_new_fixture_candidates[:100]),
-    },
-        "result": str(added_fixture_count),
-        "details": "Should become 20 when Grupo 1 J37-J38 are added.",
     },
     {
         "check_name": "grupo_1_rows",
