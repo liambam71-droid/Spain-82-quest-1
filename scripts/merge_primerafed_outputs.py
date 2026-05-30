@@ -146,8 +146,21 @@ validation_fields = [
 ]
 
 
-grupo1_path = EXPORT_DIR / "primerafed_2025_26_fixtures_results_rfeffed_enhanced.csv"
-grupo2_path = EXPORT_DIR / "grupo2_probe_parsed_fixtures.csv"
+def find_input_file(filename):
+    candidates = [
+        EXPORT_DIR / filename,
+        Path(filename),
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+
+    return EXPORT_DIR / filename
+
+
+grupo1_path = find_input_file("primerafed_2025_26_fixtures_results_rfeffed_enhanced.csv")
+grupo2_path = find_input_file("grupo2_probe_parsed_fixtures.csv")
 
 grupo1_rows = read_csv(grupo1_path)
 grupo2_probe_rows = read_csv(grupo2_path)
