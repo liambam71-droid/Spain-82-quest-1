@@ -324,7 +324,8 @@ for current in current_rows:
                 current[field] = latest[field]
 
         after_score = (current.get("home_score", ""), current.get("away_score", ""))
-if before_score != after_score:
+
+        if before_score != after_score:
             updated_score_count += 1
 
             score_change_audit_rows.append({
@@ -345,9 +346,6 @@ if before_score != after_score:
             })
 
     updated_rows.append(current)
-
-
-# Add only genuinely missing known-tail fixtures.
 # Safety rule:
 # - The current 2025-26 file already contains Grupo 1 J1-36 and Grupo 2 J1-38.
 # - Do not add any "new" Grupo 2 fixtures during refresh, because slightly different IDs
