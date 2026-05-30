@@ -25,9 +25,9 @@ jobs:
           pip install playwright
           python -m playwright install chromium
 
-      - name: Run rfef_primerafed_extractor
+      - name: Run rfef_grupo2_probe
         run: |
-          python scripts/rfef_primerafed_extractor.py
+          python scripts/rfef_grupo2_probe.py
 
       - name: Upload RFEF test outputs
         uses: actions/upload-artifact@v4
