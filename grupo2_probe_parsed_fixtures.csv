@@ -1,0 +1,381 @@
+season_id,competition_id,competition_name,competition_group,matchday,fixture_date,fixture_index,home_team_name_source,away_team_name_source,home_score,away_score,raw_line,data_confidence,notes
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,0,Gimnàstic de Tarragona,Algeciras CF,,,Gimnàstic de Tarragona 1 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,1,CE Sabadell FC,CD Eldense,,,CE Sabadell FC 0 CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,2,Juventud de Torremolinos CF,CE Europa,,,Juventud de Torremolinos CF CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,3,Hércules de Alicante CF,SD Tarazona,,,Hércules de Alicante CF 0 SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,4,Sevilla Atlético,UD Ibiza,,,Sevilla Atlético 1 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,5,CD Teruel,Betis Deportivo Balompié,,,CD Teruel Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,6,Antequera CF,FC Cartagena,,,Antequera CF 0 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,7,Atlético Madrileño,Atlético Sanluqueño CF,,,Atlético Madrileño 0 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,8,"Villarreal CF ""B""",AD Alcorcón,,,"Villarreal CF ""B"" AD Alcorcón",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,1,2025-08-31,9,Marbella FC,Real Murcia CF,,,Marbella FC 2 Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,0,Betis Deportivo Balompié,Gimnàstic de Tarragona,,,Betis Deportivo Balompié 2 Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,1,FC Cartagena,Atlético Madrileño,,,FC Cartagena Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,2,CD Eldense,"Villarreal CF ""B""",,,"CD Eldense Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,3,AD Alcorcón,CD Teruel,,,AD Alcorcón CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,4,CE Europa,Sevilla Atlético,,,CE Europa Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,5,UD Ibiza,Hércules de Alicante CF,,,UD Ibiza 2 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,6,SD Tarazona,Antequera CF,,,SD Tarazona Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,7,Algeciras CF,Marbella FC,,,Algeciras CF Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,8,Real Murcia CF,Juventud de Torremolinos CF,,,Real Murcia CF 0 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,2,2025-09-07,9,Atlético Sanluqueño CF,CE Sabadell FC,,,Atlético Sanluqueño CF CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,0,Hércules de Alicante CF,Algeciras CF,,,Hércules de Alicante CF Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,1,CD Teruel,CD Eldense,,,CD Teruel CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,2,Marbella FC,UD Ibiza,,,Marbella FC UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,3,"Villarreal CF ""B""",CE Europa,,,"Villarreal CF ""B"" CE Europa",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,4,Gimnàstic de Tarragona,Atlético Sanluqueño CF,,,Gimnàstic de Tarragona Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,5,Antequera CF,AD Alcorcón,,,Antequera CF 1 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,6,Sevilla Atlético,Betis Deportivo Balompié,,,Sevilla Atlético Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,7,Atlético Madrileño,Real Murcia CF,,,Atlético Madrileño Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,8,Juventud de Torremolinos CF,SD Tarazona,,,Juventud de Torremolinos CF SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,3,2025-09-14,9,CE Sabadell FC,FC Cartagena,,,CE Sabadell FC FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,0,Real Murcia CF,"Villarreal CF ""B""",1,1,"Real Murcia CF 1 1 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,1,Betis Deportivo Balompié,Atlético Madrileño,,,Betis Deportivo Balompié Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,2,Algeciras CF,CE Sabadell FC,,,Algeciras CF 1 CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,3,AD Alcorcón,Juventud de Torremolinos CF,,,AD Alcorcón 1 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,4,CE Europa,Gimnàstic de Tarragona,2,0,CE Europa 2 0 Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,5,SD Tarazona,Marbella FC,0,0,SD Tarazona 0 0 Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,6,CD Eldense,Sevilla Atlético,,,CD Eldense 0 Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,7,FC Cartagena,Hércules de Alicante CF,,,FC Cartagena Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,8,Atlético Sanluqueño CF,CD Teruel,,,Atlético Sanluqueño CF 1 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,4,2025-09-21,9,UD Ibiza,Antequera CF,,,UD Ibiza Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,0,Juventud de Torremolinos CF,Antequera CF,,,Juventud de Torremolinos CF Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,1,CE Sabadell FC,"Villarreal CF ""B""",,,"CE Sabadell FC 0 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,2,Gimnàstic de Tarragona,CD Eldense,,,Gimnàstic de Tarragona CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,3,Marbella FC,Betis Deportivo Balompié,,,Marbella FC 1 Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,4,CD Teruel,CE Europa,,,CD Teruel CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,5,Atlético Sanluqueño CF,FC Cartagena,,,Atlético Sanluqueño CF FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,6,Sevilla Atlético,SD Tarazona,,,Sevilla Atlético SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,7,Hércules de Alicante CF,AD Alcorcón,,,Hércules de Alicante CF AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,8,Algeciras CF,Real Murcia CF,,,Algeciras CF Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,5,2025-09-28,9,Atlético Madrileño,UD Ibiza,,,Atlético Madrileño 2 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,0,"Villarreal CF ""B""",Atlético Madrileño,,,"Villarreal CF ""B"" 1 Atlético Madrileño",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,1,Real Murcia CF,Sevilla Atlético,,,Real Murcia CF Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,2,Betis Deportivo Balompié,Algeciras CF,,,Betis Deportivo Balompié Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,3,CE Europa,Marbella FC,,,CE Europa Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,4,AD Alcorcón,Atlético Sanluqueño CF,,,AD Alcorcón 0 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,5,CD Eldense,Juventud de Torremolinos CF,,,CD Eldense Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,6,UD Ibiza,Gimnàstic de Tarragona,,,UD Ibiza Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,7,Antequera CF,CE Sabadell FC,0,0,Antequera CF 0 0 CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,8,CD Teruel,Hércules de Alicante CF,,,CD Teruel 1 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,6,2025-10-05,9,FC Cartagena,SD Tarazona,,,FC Cartagena 3 SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,0,"Villarreal CF ""B""",Betis Deportivo Balompié,,,"Villarreal CF ""B"" Betis Deportivo Balompié",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,1,Marbella FC,CD Eldense,,,Marbella FC CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,2,SD Tarazona,Real Murcia CF,,,SD Tarazona Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,3,Algeciras CF,CE Europa,,,Algeciras CF 3 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,4,Juventud de Torremolinos CF,UD Ibiza,,,Juventud de Torremolinos CF 0 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,5,CE Sabadell FC,CD Teruel,,,CE Sabadell FC CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,6,Sevilla Atlético,FC Cartagena,,,Sevilla Atlético 0 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,7,Atlético Sanluqueño CF,Antequera CF,,,Atlético Sanluqueño CF 3 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,8,Gimnàstic de Tarragona,AD Alcorcón,,,Gimnàstic de Tarragona AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,7,2025-10-12,9,Hércules de Alicante CF,Atlético Madrileño,,,Hércules de Alicante CF 0 Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,0,AD Alcorcón,CE Sabadell FC,,,AD Alcorcón CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,1,FC Cartagena,Algeciras CF,,,FC Cartagena 2 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,2,Hércules de Alicante CF,"Villarreal CF ""B""",,,"Hércules de Alicante CF 2 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,3,CE Europa,CD Eldense,,,CE Europa CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,4,Atlético Madrileño,Juventud de Torremolinos CF,,,Atlético Madrileño Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,5,Gimnàstic de Tarragona,SD Tarazona,,,Gimnàstic de Tarragona SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,6,CD Teruel,Sevilla Atlético,,,CD Teruel Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,7,Antequera CF,Marbella FC,,,Antequera CF Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,8,Real Murcia CF,UD Ibiza,,,Real Murcia CF UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,8,2025-10-19,9,Betis Deportivo Balompié,Atlético Sanluqueño CF,,,Betis Deportivo Balompié Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,0,Algeciras CF,AD Alcorcón,,,Algeciras CF AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,1,SD Tarazona,Betis Deportivo Balompié,,,SD Tarazona Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,2,Atlético Sanluqueño CF,Juventud de Torremolinos CF,0,2,Atlético Sanluqueño CF 0 2 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,3,CE Sabadell FC,Gimnàstic de Tarragona,,,CE Sabadell FC Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,4,CD Eldense,Real Murcia CF,,,CD Eldense Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,5,UD Ibiza,CD Teruel,,,UD Ibiza CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,6,"Villarreal CF ""B""",Antequera CF,,,"Villarreal CF ""B"" Antequera CF",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,7,Marbella FC,FC Cartagena,,,Marbella FC 0 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,8,Sevilla Atlético,Hércules de Alicante CF,,,Sevilla Atlético Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,9,2025-10-26,9,Atlético Madrileño,CE Europa,,,Atlético Madrileño 0 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,0,AD Alcorcón,Sevilla Atlético,,,AD Alcorcón Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,1,Juventud de Torremolinos CF,CE Sabadell FC,,,Juventud de Torremolinos CF CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,2,CD Eldense,Algeciras CF,,,CD Eldense 2 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,3,FC Cartagena,"Villarreal CF ""B""",,,"FC Cartagena 0 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,4,CE Europa,Atlético Sanluqueño CF,,,CE Europa 1 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,5,Betis Deportivo Balompié,Real Murcia CF,,,Betis Deportivo Balompié 2 Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,6,SD Tarazona,UD Ibiza,,,SD Tarazona UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,7,CD Teruel,Marbella FC,,,CD Teruel 0 Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,8,Antequera CF,Hércules de Alicante CF,,,Antequera CF Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,10,2025-11-02,9,Gimnàstic de Tarragona,Atlético Madrileño,0,3,Gimnàstic de Tarragona 0 3 Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,0,CE Sabadell FC,SD Tarazona,,,CE Sabadell FC SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,1,Atlético Madrileño,CD Eldense,,,Atlético Madrileño CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,2,CD Teruel,FC Cartagena,,,CD Teruel FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,3,Hércules de Alicante CF,CE Europa,,,Hércules de Alicante CF CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,4,Algeciras CF,Antequera CF,,,Algeciras CF 0 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,5,Real Murcia CF,Gimnàstic de Tarragona,,,Real Murcia CF 2 Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,6,Sevilla Atlético,Juventud de Torremolinos CF,,,Sevilla Atlético Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,7,Marbella FC,AD Alcorcón,,,Marbella FC 2 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,8,UD Ibiza,Betis Deportivo Balompié,,,UD Ibiza Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,11,2025-11-09,9,"Villarreal CF ""B""",Atlético Sanluqueño CF,,,"Villarreal CF ""B"" Atlético Sanluqueño CF",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,0,Betis Deportivo Balompié,CE Sabadell FC,,,Betis Deportivo Balompié CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,1,SD Tarazona,"Villarreal CF ""B""",,,"SD Tarazona 1 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,2,Atlético Sanluqueño CF,UD Ibiza,,,Atlético Sanluqueño CF UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,3,AD Alcorcón,Atlético Madrileño,,,AD Alcorcón Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,4,Real Murcia CF,CD Teruel,,,Real Murcia CF CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,5,Antequera CF,Sevilla Atlético,,,Antequera CF Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,6,Juventud de Torremolinos CF,Algeciras CF,,,Juventud de Torremolinos CF 1 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,7,Gimnàstic de Tarragona,Marbella FC,,,Gimnàstic de Tarragona Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,8,CD Eldense,Hércules de Alicante CF,,,CD Eldense Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,12,2025-11-16,9,CE Europa,FC Cartagena,,,CE Europa FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,0,"Villarreal CF ""B""",Gimnàstic de Tarragona,,,"Villarreal CF ""B"" Gimnàstic de Tarragona",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,1,Antequera CF,Real Murcia CF,,,Antequera CF 2 Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,2,CD Teruel,Juventud de Torremolinos CF,,,CD Teruel Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,3,Hércules de Alicante CF,Betis Deportivo Balompié,,,Hércules de Alicante CF Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,4,AD Alcorcón,SD Tarazona,,,AD Alcorcón SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,5,Algeciras CF,Atlético Sanluqueño CF,,,Algeciras CF Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,6,FC Cartagena,CD Eldense,,,FC Cartagena CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,7,UD Ibiza,CE Europa,,,UD Ibiza 1 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,8,CE Sabadell FC,Sevilla Atlético,,,CE Sabadell FC Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,13,2025-11-23,9,Marbella FC,Atlético Madrileño,,,Marbella FC Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,0,Betis Deportivo Balompié,FC Cartagena,,,Betis Deportivo Balompié 0 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,1,CE Europa,CE Sabadell FC,,,CE Europa 0 CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,2,Atlético Sanluqueño CF,SD Tarazona,,,Atlético Sanluqueño CF 2 SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,3,Sevilla Atlético,Marbella FC,,,Sevilla Atlético 1 Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,4,CD Eldense,Antequera CF,,,CD Eldense 3 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,5,Juventud de Torremolinos CF,"Villarreal CF ""B""",,,"Juventud de Torremolinos CF Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,6,UD Ibiza,Algeciras CF,,,UD Ibiza 0 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,7,Gimnàstic de Tarragona,Hércules de Alicante CF,,,Gimnàstic de Tarragona Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,8,Real Murcia CF,AD Alcorcón,,,Real Murcia CF 1 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,14,2025-11-30,9,Atlético Madrileño,CD Teruel,,,Atlético Madrileño CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,0,Sevilla Atlético,Gimnàstic de Tarragona,,,Sevilla Atlético Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,1,Hércules de Alicante CF,Juventud de Torremolinos CF,,,Hércules de Alicante CF 1 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,2,Marbella FC,Atlético Sanluqueño CF,,,Marbella FC 1 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,3,AD Alcorcón,CD Eldense,,,AD Alcorcón CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,4,Algeciras CF,Atlético Madrileño,,,Algeciras CF Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,5,Antequera CF,Betis Deportivo Balompié,,,Antequera CF 2 Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,6,CE Sabadell FC,UD Ibiza,,,CE Sabadell FC 0 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,7,"Villarreal CF ""B""",CD Teruel,,,"Villarreal CF ""B"" CD Teruel",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,8,FC Cartagena,Real Murcia CF,,,FC Cartagena Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,15,2025-12-07,9,SD Tarazona,CE Europa,,,SD Tarazona CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,0,Betis Deportivo Balompié,AD Alcorcón,,,Betis Deportivo Balompié 1 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,1,CE Europa,Antequera CF,,,CE Europa Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,2,Juventud de Torremolinos CF,Marbella FC,,,Juventud de Torremolinos CF Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,3,CD Eldense,SD Tarazona,,,CD Eldense SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,4,Real Murcia CF,CE Sabadell FC,,,Real Murcia CF 0 CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,5,UD Ibiza,"Villarreal CF ""B""",,,"UD Ibiza Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,6,CD Teruel,Algeciras CF,,,CD Teruel Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,7,Atlético Sanluqueño CF,Hércules de Alicante CF,,,Atlético Sanluqueño CF Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,8,Gimnàstic de Tarragona,FC Cartagena,,,Gimnàstic de Tarragona FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,16,2025-12-14,9,Atlético Madrileño,Sevilla Atlético,,,Atlético Madrileño 0 Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,0,Algeciras CF,"Villarreal CF ""B""",,,"Algeciras CF Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,1,CD Eldense,Betis Deportivo Balompié,,,CD Eldense Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,2,Marbella FC,Hércules de Alicante CF,,,Marbella FC 0 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,3,SD Tarazona,CD Teruel,3,2,SD Tarazona 3 2 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,4,Antequera CF,Gimnàstic de Tarragona,,,Antequera CF 4 Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,5,CE Sabadell FC,Atlético Madrileño,,,CE Sabadell FC Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,6,AD Alcorcón,UD Ibiza,,,AD Alcorcón UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,7,Sevilla Atlético,Atlético Sanluqueño CF,,,Sevilla Atlético 2 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,8,FC Cartagena,Juventud de Torremolinos CF,3,0,FC Cartagena 3 0 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,17,2025-12-21,9,Real Murcia CF,CE Europa,,,Real Murcia CF 3 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,0,AD Alcorcón,FC Cartagena,,,AD Alcorcón FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,1,Atlético Madrileño,SD Tarazona,,,Atlético Madrileño 1 SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,2,Juventud de Torremolinos CF,Gimnàstic de Tarragona,,,Juventud de Torremolinos CF 0 Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,3,CD Teruel,Antequera CF,,,CD Teruel 0 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,4,Algeciras CF,Sevilla Atlético,,,Algeciras CF Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,5,Hércules de Alicante CF,CE Sabadell FC,,,Hércules de Alicante CF 5 CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,6,UD Ibiza,CD Eldense,,,UD Ibiza CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,7,Betis Deportivo Balompié,CE Europa,,,Betis Deportivo Balompié CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,8,"Villarreal CF ""B""",Marbella FC,,,"Villarreal CF ""B"" Marbella FC",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,18,2026-01-04,9,Atlético Sanluqueño CF,Real Murcia CF,,,Atlético Sanluqueño CF 0 Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,0,Sevilla Atlético,"Villarreal CF ""B""",,,"Sevilla Atlético 0 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,1,CE Europa,AD Alcorcón,0,0,CE Europa 0 0 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,2,FC Cartagena,UD Ibiza,,,FC Cartagena UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,3,Gimnàstic de Tarragona,CD Teruel,,,Gimnàstic de Tarragona 0 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,4,SD Tarazona,Algeciras CF,,,SD Tarazona 2 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,5,Antequera CF,Atlético Madrileño,,,Antequera CF Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,6,CD Eldense,Atlético Sanluqueño CF,,,CD Eldense 0 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,7,Betis Deportivo Balompié,Juventud de Torremolinos CF,,,Betis Deportivo Balompié Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,8,CE Sabadell FC,Marbella FC,,,CE Sabadell FC Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,19,2026-01-11,9,Real Murcia CF,Hércules de Alicante CF,,,Real Murcia CF Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,0,"Villarreal CF ""B""",FC Cartagena,,,"Villarreal CF ""B"" FC Cartagena",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,1,Hércules de Alicante CF,Sevilla Atlético,,,Hércules de Alicante CF 0 Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,2,Marbella FC,SD Tarazona,,,Marbella FC SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,3,CE Europa,Atlético Madrileño,,,CE Europa 2 Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,4,AD Alcorcón,Antequera CF,,,AD Alcorcón Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,5,Juventud de Torremolinos CF,CD Eldense,,,Juventud de Torremolinos CF CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,6,CD Teruel,CE Sabadell FC,,,CD Teruel 1 CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,7,Algeciras CF,Betis Deportivo Balompié,,,Algeciras CF Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,8,UD Ibiza,Real Murcia CF,,,UD Ibiza Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,20,2026-01-18,9,Atlético Sanluqueño CF,Gimnàstic de Tarragona,,,Atlético Sanluqueño CF Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,0,Atlético Madrileño,"Villarreal CF ""B""",,,"Atlético Madrileño Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,1,Antequera CF,Atlético Sanluqueño CF,,,Antequera CF Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,2,CE Sabadell FC,AD Alcorcón,,,CE Sabadell FC 0 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,3,FC Cartagena,CE Europa,,,FC Cartagena CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,4,Betis Deportivo Balompié,Marbella FC,,,Betis Deportivo Balompié Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,5,Gimnàstic de Tarragona,UD Ibiza,1,0,Gimnàstic de Tarragona 1 0 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,6,SD Tarazona,Hércules de Alicante CF,2,2,SD Tarazona 2 2 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,7,Juventud de Torremolinos CF,Sevilla Atlético,,,Juventud de Torremolinos CF Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,8,CD Eldense,CD Teruel,,,CD Eldense 2 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,21,2026-01-25,9,Real Murcia CF,Algeciras CF,,,Real Murcia CF 0 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,0,Hércules de Alicante CF,FC Cartagena,,,Hércules de Alicante CF 0 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,1,Sevilla Atlético,CE Europa,,,Sevilla Atlético CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,2,"Villarreal CF ""B""",SD Tarazona,,,"Villarreal CF ""B"" SD Tarazona",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,3,Atlético Sanluqueño CF,Betis Deportivo Balompié,,,Atlético Sanluqueño CF 4 Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,4,CD Teruel,Real Murcia CF,,,CD Teruel 0 Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,5,Marbella FC,Antequera CF,,,Marbella FC Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,6,Algeciras CF,CD Eldense,,,Algeciras CF 1 CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,7,UD Ibiza,Atlético Madrileño,,,UD Ibiza Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,8,CE Sabadell FC,Juventud de Torremolinos CF,,,CE Sabadell FC Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,22,2026-02-01,9,AD Alcorcón,Gimnàstic de Tarragona,,,AD Alcorcón Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,0,CE Europa,Hércules de Alicante CF,,,CE Europa Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,1,SD Tarazona,Atlético Sanluqueño CF,,,SD Tarazona Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,2,Atlético Madrileño,AD Alcorcón,,,Atlético Madrileño AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,3,CD Eldense,CE Sabadell FC,,,CD Eldense CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,4,Betis Deportivo Balompié,UD Ibiza,,,Betis Deportivo Balompié 2 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,5,Gimnàstic de Tarragona,"Villarreal CF ""B""",,,"Gimnàstic de Tarragona Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,6,Juventud de Torremolinos CF,CD Teruel,,,Juventud de Torremolinos CF 2 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,7,FC Cartagena,Sevilla Atlético,,,FC Cartagena Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,8,Real Murcia CF,Marbella FC,,,Real Murcia CF Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,23,2026-02-08,9,Antequera CF,Algeciras CF,,,Antequera CF Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,0,Atlético Sanluqueño CF,Atlético Madrileño,,,Atlético Sanluqueño CF Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,1,Algeciras CF,Juventud de Torremolinos CF,1,0,Algeciras CF 1 0 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,2,CE Europa,SD Tarazona,,,CE Europa 1 SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,3,Gimnàstic de Tarragona,Betis Deportivo Balompié,,,Gimnàstic de Tarragona Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,4,Sevilla Atlético,CD Teruel,,,Sevilla Atlético 0 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,5,UD Ibiza,CE Sabadell FC,,,UD Ibiza CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,6,FC Cartagena,Marbella FC,,,FC Cartagena Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,7,Hércules de Alicante CF,Antequera CF,,,Hércules de Alicante CF 0 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,8,AD Alcorcón,Real Murcia CF,,,AD Alcorcón Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,24,2026-02-15,9,"Villarreal CF ""B""",CD Eldense,,,"Villarreal CF ""B"" 2 CD Eldense",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,0,Betis Deportivo Balompié,"Villarreal CF ""B""",,,"Betis Deportivo Balompié Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,1,Atlético Madrileño,Gimnàstic de Tarragona,,,Atlético Madrileño Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,2,Juventud de Torremolinos CF,Hércules de Alicante CF,,,Juventud de Torremolinos CF 2 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,3,SD Tarazona,Sevilla Atlético,,,SD Tarazona Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,4,CE Sabadell FC,Atlético Sanluqueño CF,,,CE Sabadell FC 0 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,5,Marbella FC,Algeciras CF,,,Marbella FC 4 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,6,Real Murcia CF,FC Cartagena,,,Real Murcia CF FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,7,Antequera CF,CE Europa,,,Antequera CF CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,8,CD Eldense,AD Alcorcón,,,CD Eldense AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,25,2026-02-22,9,CD Teruel,UD Ibiza,,,CD Teruel 1 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,0,AD Alcorcón,Betis Deportivo Balompié,,,AD Alcorcón Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,1,Sevilla Atlético,Atlético Madrileño,,,Sevilla Atlético Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,2,Atlético Sanluqueño CF,Marbella FC,3,2,Atlético Sanluqueño CF 3 2 Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,3,Hércules de Alicante CF,CD Eldense,,,Hércules de Alicante CF CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,4,UD Ibiza,SD Tarazona,,,UD Ibiza SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,5,CE Europa,Juventud de Torremolinos CF,,,CE Europa Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,6,FC Cartagena,CE Sabadell FC,,,FC Cartagena CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,7,Gimnàstic de Tarragona,Antequera CF,,,Gimnàstic de Tarragona 0 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,8,Algeciras CF,CD Teruel,,,Algeciras CF CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,26,2026-03-01,9,"Villarreal CF ""B""",Real Murcia CF,,,"Villarreal CF ""B"" Real Murcia CF",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,0,Real Murcia CF,Atlético Sanluqueño CF,,,Real Murcia CF 1 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,1,Betis Deportivo Balompié,Sevilla Atlético,,,Betis Deportivo Balompié Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,2,CE Sabadell FC,Algeciras CF,3,1,CE Sabadell FC 3 1 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,3,Marbella FC,CE Europa,,,Marbella FC CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,4,CD Eldense,Gimnàstic de Tarragona,,,CD Eldense Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,5,Antequera CF,UD Ibiza,,,Antequera CF UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,6,CD Teruel,"Villarreal CF ""B""",,,"CD Teruel Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,7,Juventud de Torremolinos CF,AD Alcorcón,,,Juventud de Torremolinos CF 1 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,8,SD Tarazona,FC Cartagena,,,SD Tarazona FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,27,2026-03-08,9,Atlético Madrileño,Hércules de Alicante CF,0,0,Atlético Madrileño 0 0 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,0,Gimnàstic de Tarragona,CE Sabadell FC,,,Gimnàstic de Tarragona CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,1,CE Europa,Betis Deportivo Balompié,,,CE Europa Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,2,"Villarreal CF ""B""",Juventud de Torremolinos CF,,,"Villarreal CF ""B"" Juventud de Torremolinos CF",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,3,FC Cartagena,CD Teruel,,,FC Cartagena CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,4,Atlético Sanluqueño CF,CD Eldense,1,4,Atlético Sanluqueño CF 1 4 CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,5,AD Alcorcón,Algeciras CF,,,AD Alcorcón 0 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,6,Sevilla Atlético,Antequera CF,1,1,Sevilla Atlético 1 1 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,7,SD Tarazona,Atlético Madrileño,,,SD Tarazona Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,8,Hércules de Alicante CF,Real Murcia CF,,,Hércules de Alicante CF Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,28,2026-03-15,9,UD Ibiza,Marbella FC,,,UD Ibiza Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,0,Betis Deportivo Balompié,Hércules de Alicante CF,,,Betis Deportivo Balompié Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,1,CE Sabadell FC,CE Europa,4,0,CE Sabadell FC 4 0 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,2,Atlético Madrileño,FC Cartagena,,,Atlético Madrileño FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,3,Antequera CF,"Villarreal CF ""B""",,,"Antequera CF 0 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,4,CD Teruel,AD Alcorcón,,,CD Teruel AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,5,Juventud de Torremolinos CF,Atlético Sanluqueño CF,,,Juventud de Torremolinos CF 1 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,6,CD Eldense,UD Ibiza,,,CD Eldense UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,7,Marbella FC,Sevilla Atlético,,,Marbella FC 0 Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,8,Algeciras CF,Gimnàstic de Tarragona,,,Algeciras CF Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,29,2026-03-22,9,Real Murcia CF,SD Tarazona,,,Real Murcia CF SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,0,CE Europa,Algeciras CF,,,CE Europa Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,1,Gimnàstic de Tarragona,Juventud de Torremolinos CF,,,Gimnàstic de Tarragona 2 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,2,Betis Deportivo Balompié,CD Teruel,2,2,Betis Deportivo Balompié 2 2 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,3,FC Cartagena,Atlético Sanluqueño CF,,,FC Cartagena 0 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,4,UD Ibiza,AD Alcorcón,,,UD Ibiza AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,5,Atlético Madrileño,Antequera CF,,,Atlético Madrileño 2 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,6,"Villarreal CF ""B""",CE Sabadell FC,,,"Villarreal CF ""B"" 1 CE Sabadell FC",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,7,SD Tarazona,CD Eldense,,,SD Tarazona 1 CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,8,Sevilla Atlético,Real Murcia CF,,,Sevilla Atlético Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,30,2026-03-29,9,Hércules de Alicante CF,Marbella FC,2,0,Hércules de Alicante CF 2 0 Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,0,CD Eldense,CE Europa,,,CD Eldense 0 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,1,Marbella FC,"Villarreal CF ""B""",,,"Marbella FC 1 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,2,Juventud de Torremolinos CF,FC Cartagena,0,1,Juventud de Torremolinos CF 0 1 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,3,Antequera CF,SD Tarazona,,,Antequera CF SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,4,CD Teruel,Gimnàstic de Tarragona,,,CD Teruel Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,5,Atlético Sanluqueño CF,Sevilla Atlético,,,Atlético Sanluqueño CF 0 Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,6,AD Alcorcón,Hércules de Alicante CF,,,AD Alcorcón 0 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,7,Algeciras CF,UD Ibiza,,,Algeciras CF UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,8,CE Sabadell FC,Betis Deportivo Balompié,,,CE Sabadell FC Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,31,2026-04-05,9,Real Murcia CF,Atlético Madrileño,,,Real Murcia CF 1 Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,0,Atlético Madrileño,Marbella FC,,,Atlético Madrileño Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,1,Sevilla Atlético,CE Sabadell FC,,,Sevilla Atlético CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,2,SD Tarazona,AD Alcorcón,2,0,SD Tarazona 2 0 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,3,Betis Deportivo Balompié,CD Eldense,,,Betis Deportivo Balompié CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,4,Gimnàstic de Tarragona,Real Murcia CF,,,Gimnàstic de Tarragona Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,5,FC Cartagena,Antequera CF,,,FC Cartagena Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,6,UD Ibiza,Juventud de Torremolinos CF,,,UD Ibiza Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,7,"Villarreal CF ""B""",Algeciras CF,,,"Villarreal CF ""B"" 0 Algeciras CF",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,8,CE Europa,CD Teruel,,,CE Europa 0 CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,32,2026-04-12,9,Hércules de Alicante CF,Atlético Sanluqueño CF,,,Hércules de Alicante CF Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,0,Real Murcia CF,Antequera CF,,,Real Murcia CF 3 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,1,Atlético Sanluqueño CF,CE Europa,,,Atlético Sanluqueño CF 3 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,2,UD Ibiza,Sevilla Atlético,,,UD Ibiza Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,3,Marbella FC,Gimnàstic de Tarragona,,,Marbella FC Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,4,CD Teruel,Atlético Madrileño,,,CD Teruel Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,5,AD Alcorcón,"Villarreal CF ""B""",,,"AD Alcorcón Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,6,Juventud de Torremolinos CF,Betis Deportivo Balompié,,,Juventud de Torremolinos CF 2 Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,7,Algeciras CF,SD Tarazona,,,Algeciras CF SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,8,CE Sabadell FC,Hércules de Alicante CF,,,CE Sabadell FC 1 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,33,2026-04-19,9,CD Eldense,FC Cartagena,,,CD Eldense 1 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,0,Atlético Madrileño,Betis Deportivo Balompié,,,Atlético Madrileño Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,1,Atlético Sanluqueño CF,AD Alcorcón,,,Atlético Sanluqueño CF 1 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,2,"Villarreal CF ""B""",UD Ibiza,,,"Villarreal CF ""B"" UD Ibiza",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,3,Antequera CF,CD Eldense,,,Antequera CF CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,4,CE Europa,Real Murcia CF,,,CE Europa 0 Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,5,Hércules de Alicante CF,CD Teruel,,,Hércules de Alicante CF CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,6,SD Tarazona,Juventud de Torremolinos CF,0,0,SD Tarazona 0 0 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,7,Sevilla Atlético,Algeciras CF,,,Sevilla Atlético Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,8,Marbella FC,CE Sabadell FC,,,Marbella FC CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,34,2026-04-26,9,FC Cartagena,Gimnàstic de Tarragona,,,FC Cartagena Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,0,AD Alcorcón,CE Europa,,,AD Alcorcón 0 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,1,Algeciras CF,FC Cartagena,,,Algeciras CF FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,2,Gimnàstic de Tarragona,Sevilla Atlético,,,Gimnàstic de Tarragona 1 Sevilla Atlético,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,3,Betis Deportivo Balompié,Antequera CF,,,Betis Deportivo Balompié 1 Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,4,Juventud de Torremolinos CF,Atlético Madrileño,,,Juventud de Torremolinos CF 1 Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,5,"Villarreal CF ""B""",Hércules de Alicante CF,,,"Villarreal CF ""B"" 1 Hércules de Alicante CF",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,6,CD Teruel,SD Tarazona,,,CD Teruel SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,7,UD Ibiza,Atlético Sanluqueño CF,,,UD Ibiza 0 Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,8,CE Sabadell FC,Real Murcia CF,,,CE Sabadell FC Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,35,2026-05-03,9,CD Eldense,Marbella FC,,,CD Eldense Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,0,FC Cartagena,AD Alcorcón,,,FC Cartagena 2 AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,1,Atlético Madrileño,CE Sabadell FC,,,Atlético Madrileño CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,2,Hércules de Alicante CF,UD Ibiza,,,Hércules de Alicante CF UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,3,Atlético Sanluqueño CF,Algeciras CF,,,Atlético Sanluqueño CF 0 Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,4,Marbella FC,Juventud de Torremolinos CF,,,Marbella FC 0 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,5,Sevilla Atlético,CD Eldense,,,Sevilla Atlético 2 CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,6,CE Europa,"Villarreal CF ""B""",,,"CE Europa 3 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,7,SD Tarazona,Gimnàstic de Tarragona,,,SD Tarazona Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,8,Antequera CF,CD Teruel,,,Antequera CF CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,36,2026-05-10,9,Real Murcia CF,Betis Deportivo Balompié,,,Real Murcia CF 1 Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,0,AD Alcorcón,Marbella FC,,,AD Alcorcón Marbella FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,1,Algeciras CF,Hércules de Alicante CF,,,Algeciras CF 2 Hércules de Alicante CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,2,Betis Deportivo Balompié,SD Tarazona,,,Betis Deportivo Balompié 3 SD Tarazona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,3,CD Eldense,Atlético Madrileño,,,CD Eldense Atlético Madrileño,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,4,Juventud de Torremolinos CF,Real Murcia CF,,,Juventud de Torremolinos CF Real Murcia CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,5,UD Ibiza,FC Cartagena,,,UD Ibiza 3 FC Cartagena,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,6,Gimnàstic de Tarragona,CE Europa,,,Gimnàstic de Tarragona 2 CE Europa,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,7,CE Sabadell FC,Antequera CF,,,CE Sabadell FC Antequera CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,8,CD Teruel,Atlético Sanluqueño CF,,,CD Teruel Atlético Sanluqueño CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,37,2026-05-17,9,"Villarreal CF ""B""",Sevilla Atlético,,,"Villarreal CF ""B"" 2 Sevilla Atlético",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,0,Marbella FC,CD Teruel,,,Marbella FC CD Teruel,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,1,Hércules de Alicante CF,Gimnàstic de Tarragona,,,Hércules de Alicante CF 1 Gimnàstic de Tarragona,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,2,CE Europa,UD Ibiza,3,2,CE Europa 3 2 UD Ibiza,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,3,Antequera CF,Juventud de Torremolinos CF,3,1,Antequera CF 3 1 Juventud de Torremolinos CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,4,Atlético Sanluqueño CF,"Villarreal CF ""B""",,,"Atlético Sanluqueño CF 1 Villarreal CF ""B""",high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,5,Sevilla Atlético,AD Alcorcón,,,Sevilla Atlético AD Alcorcón,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,6,SD Tarazona,CE Sabadell FC,,,SD Tarazona CE Sabadell FC,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,7,Atlético Madrileño,Algeciras CF,,,Atlético Madrileño Algeciras CF,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,8,FC Cartagena,Betis Deportivo Balompié,,,FC Cartagena Betis Deportivo Balompié,high,Parsed from Grupo 2 probe calendar-view line structure.
+2025-26,PRIMERA_FEDERACION,Primera Federación,Grupo 2,38,2026-05-24,9,Real Murcia CF,CD Eldense,,,Real Murcia CF 3 CD Eldense,high,Parsed from Grupo 2 probe calendar-view line structure.
