@@ -2482,14 +2482,4 @@ for filename in [
 
 print("Created Grupo 1 calendar recovery outputs.")
 
-Then run the workflow and upload:
 
-primerafed_2025_26_grupo1_calendar_recovery_validation.csv
-primerafed_2025_26_grupo1_calendar_recovered_raw.csv
-
-What we want is:
-
-calendar_recovered_non_failed_rows = 70
-enhanced_fixture_rows = 360
-enhanced_grupo_1_fixture_rows = 360
-calendar_unexpected_jornada_counts = 0
