@@ -25,9 +25,9 @@ jobs:
           pip install playwright
           python -m playwright install chromium
 
-      - name: Run Primera Federación extractor
+      - name: Run Grupo 2 Primera Federación probe
         run: |
-         python scripts/rfef_primerafed_extractor.py
+         python scripts/rfef_grupo2_probe.py
          
       - name: Upload RFEF test outputs
         uses: actions/upload-artifact@v4
