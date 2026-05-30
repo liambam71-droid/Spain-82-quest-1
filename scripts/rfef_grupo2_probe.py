@@ -249,3 +249,230 @@ write_csv(
 )
 
 print("Grupo 2 probe complete.")
+# -----------------------------
+# Parse Grupo 2 probe lines into structured fixture rows
+# -----------------------------
+
+grupo2_parse_fields = [
+    "season_id",
+    "competition_id",
+    "competition_name",
+    "competition_group",
+    "matchday",
+    "fixture_date",
+    "fixture_index",
+    "home_team_name_source",
+    "away_team_name_source",
+    "home_score",
+    "away_score",
+    "raw_line",
+    "data_confidence",
+    "notes",
+]
+
+grupo2_parse_rows = []
+
+grupo2_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+GRUPO2_TEAMS = [
+    'AD Alcorcón',
+    'Algeciras CF',
+    'Antequera CF',
+    'Atlético Madrileño',
+    'Atlético Sanluqueño CF',
+    'Betis Deportivo Balompié',
+    'CD Eldense',
+    'CD Teruel',
+    'CE Europa',
+    'CE Sabadell FC',
+    'FC Cartagena',
+    'Gimnàstic de Tarragona',
+    'Hércules de Alicante CF',
+    'Juventud de Torremolinos CF',
+    'Marbella FC',
+    'Real Murcia CF',
+    'SD Tarazona',
+    'Sevilla Atlético',
+    'UD Ibiza',
+    'Villarreal CF "B"',
+]
+
+GRUPO2_TEAMS = sorted(GRUPO2_TEAMS, key=len, reverse=True)
+
+
+def probe_normalise_date(value):
+    match = re.match(r"^([0-9]{2})-([0-9]{2})-([0-9]{4})$", value.strip())
+    if not match:
+        return value
+    day, month, year = match.groups()
+    return f"{year}-{month}-{day}"
+
+
+def probe_parse_score_middle(middle_text):
+    middle_text = re.sub(r"\s+", " ", middle_text).strip()
+
+    if not middle_text:
+        return "", ""
+
+    # Two numbers is a reliable score, e.g. "0 2".
+    two_score = re.match(r"^([0-9]{1,2})\s+([0-9]{1,2})$", middle_text)
+    if two_score:
+        return two_score.group(1), two_score.group(2)
+
+    # Single numbers are ambiguous in the calendar layout, so do not treat them as final scores.
+    return "", ""
+
+
+def probe_parse_fixture_line(line, teams):
+    cleaned = re.sub(r"\s+", " ", line).strip()
+
+    for home_team in teams:
+        if not cleaned.startswith(home_team + " "):
+            continue
+
+        remainder = cleaned[len(home_team):].strip()
+
+        for away_team in teams:
+            if away_team == home_team:
+                continue
+
+            if remainder == away_team:
+                return home_team, away_team, "", ""
+
+            if remainder.endswith(" " + away_team):
+                middle = remainder[: -len(away_team)].strip()
+                home_score, away_score = probe_parse_score_middle(middle)
+                return home_team, away_team, home_score, away_score
+
+    return "", "", "", ""
+
+
+try:
+    current_matchday = ""
+    current_fixture_date = ""
+    fixture_index_by_matchday = {}
+
+    for row in line_rows:
+        line = row.get("line_text", "").strip()
+
+        jornada_match = re.match(
+            r"^Jornada\s+([0-9]+)\s+\(([0-9]{2}-[0-9]{2}-[0-9]{4})\)$",
+            line,
+            re.IGNORECASE,
+        )
+
+        if jornada_match:
+            current_matchday = jornada_match.group(1)
+            current_fixture_date = probe_normalise_date(jornada_match.group(2))
+            fixture_index_by_matchday[current_matchday] = 0
+            continue
+
+        if not current_matchday:
+            continue
+
+        if row.get("possible_fixture_line") != "true":
+            continue
+
+        home_team, away_team, home_score, away_score = probe_parse_fixture_line(line, GRUPO2_TEAMS)
+
+        if not home_team or not away_team:
+            continue
+
+        fixture_index = fixture_index_by_matchday.get(current_matchday, 0)
+
+        grupo2_parse_rows.append({
+            "season_id": "2025-26",
+            "competition_id": "PRIMERA_FEDERACION",
+            "competition_name": "Primera Federación",
+            "competition_group": "Grupo 2",
+            "matchday": current_matchday,
+            "fixture_date": current_fixture_date,
+            "fixture_index": str(fixture_index),
+            "home_team_name_source": home_team,
+            "away_team_name_source": away_team,
+            "home_score": home_score,
+            "away_score": away_score,
+            "raw_line": line,
+            "data_confidence": "high" if current_fixture_date else "needs_review",
+            "notes": "Parsed from Grupo 2 probe calendar-view line structure.",
+        })
+
+        fixture_index_by_matchday[current_matchday] = fixture_index + 1
+
+except Exception as e:
+    grupo2_parse_rows.append({
+        "season_id": "",
+        "competition_id": "",
+        "competition_name": "",
+        "competition_group": "",
+        "matchday": "",
+        "fixture_date": "",
+        "fixture_index": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "raw_line": "",
+        "data_confidence": "failed",
+        "notes": f"Grupo 2 probe parser failed: {type(e).__name__}: {e}",
+    })
+
+
+write_csv(
+    "grupo2_probe_parsed_fixtures.csv",
+    grupo2_parse_fields,
+    grupo2_parse_rows,
+)
+
+counts_by_matchday = {}
+
+for row in grupo2_parse_rows:
+    matchday = row.get("matchday", "")
+    if matchday:
+        counts_by_matchday[matchday] = counts_by_matchday.get(matchday, 0) + 1
+
+unexpected_counts = [
+    f"J{matchday}={count}"
+    for matchday, count in sorted(counts_by_matchday.items(), key=lambda item: int(item[0]))
+    if count != 10
+]
+
+high_confidence_rows = [
+    row for row in grupo2_parse_rows
+    if row.get("data_confidence") == "high"
+]
+
+grupo2_validation_rows = [
+    {
+        "check_name": "grupo2_parsed_fixture_rows",
+        "result": str(len(grupo2_parse_rows)),
+        "details": "Expected 380.",
+    },
+    {
+        "check_name": "grupo2_high_confidence_rows",
+        "result": str(len(high_confidence_rows)),
+        "details": "Expected 380.",
+    },
+    {
+        "check_name": "matchdays_found",
+        "result": str(len(counts_by_matchday)),
+        "details": "Expected 38.",
+    },
+    {
+        "check_name": "unexpected_matchday_counts",
+        "result": str(len(unexpected_counts)),
+        "details": "|".join(unexpected_counts),
+    },
+]
+
+write_csv(
+    "grupo2_probe_parse_validation.csv",
+    grupo2_validation_fields,
+    grupo2_validation_rows,
+)
+
+print(f"Parsed Grupo 2 probe fixtures: {len(grupo2_parse_rows)}")
