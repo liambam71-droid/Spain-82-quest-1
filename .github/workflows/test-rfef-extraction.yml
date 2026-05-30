@@ -25,11 +25,10 @@ jobs:
           pip install playwright
           python -m playwright install chromium
 
-      - name: Run Primera Federación extraction and merge
+      - name: Run Primera Federación extractor
         run: |
-          python scripts/rfef_grupo2_probe.py
-          python scripts/rfef_primerafed_extractor.py
-          python scripts/merge_primerafed_outputs.py
+         python scripts/rfef_primerafed_extractor.py
+         
       - name: Upload RFEF test outputs
         uses: actions/upload-artifact@v4
         with:
