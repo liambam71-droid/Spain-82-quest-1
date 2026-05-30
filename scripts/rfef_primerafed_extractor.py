@@ -3141,3 +3141,520 @@ with root_grupo2_text_inspection_path.open("w", newline="", encoding="utf-8") as
     writer.writerows(grupo2_text_inspection_rows)
 
 print("Created Grupo 2 calendar text inspection CSV.")
+# -----------------------------
+# Merge proven Grupo 2 probe parser into main Primera Federación extractor
+# Recovers Grupo 2 J1-38 from marcadores calendar-view route
+# -----------------------------
+
+grupo2_merge_raw_fields = raw_fields
+grupo2_merge_rows = []
+
+GRUPO2_TEAMS_MERGE = [
+    'AD Alcorcón',
+    'Algeciras CF',
+    'Antequera CF',
+    'Atlético Madrileño',
+    'Atlético Sanluqueño CF',
+    'Betis Deportivo Balompié',
+    'CD Eldense',
+    'CD Teruel',
+    'CE Europa',
+    'CE Sabadell FC',
+    'FC Cartagena',
+    'Gimnàstic de Tarragona',
+    'Hércules de Alicante CF',
+    'Juventud de Torremolinos CF',
+    'Marbella FC',
+    'Real Murcia CF',
+    'SD Tarazona',
+    'Sevilla Atlético',
+    'UD Ibiza',
+    'Villarreal CF "B"',
+]
+
+GRUPO2_TEAMS_MERGE = sorted(GRUPO2_TEAMS_MERGE, key=len, reverse=True)
+
+
+def merge_probe_normalise_date(value):
+    match = re.match(r"^([0-9]{2})-([0-9]{2})-([0-9]{4})$", value.strip())
+    if not match:
+        return value
+    day, month, year = match.groups()
+    return f"{year}-{month}-{day}"
+
+
+def merge_probe_parse_score_middle(middle_text):
+    middle_text = re.sub(r"\s+", " ", middle_text).strip()
+
+    if not middle_text:
+        return "", ""
+
+    two_score = re.match(r"^([0-9]{1,2})\s+([0-9]{1,2})$", middle_text)
+    if two_score:
+        return two_score.group(1), two_score.group(2)
+
+    # Single numbers are ambiguous in the calendar layout, so leave blank.
+    return "", ""
+
+
+def merge_probe_parse_fixture_line(line, teams):
+    cleaned = re.sub(r"\s+", " ", line).strip()
+
+    for home_team in teams:
+        if not cleaned.startswith(home_team + " "):
+            continue
+
+        remainder = cleaned[len(home_team):].strip()
+
+        for away_team in teams:
+            if away_team == home_team:
+                continue
+
+            if remainder == away_team:
+                return home_team, away_team, "", ""
+
+            if remainder.endswith(" " + away_team):
+                middle = remainder[: -len(away_team)].strip()
+                home_score, away_score = merge_probe_parse_score_middle(middle)
+                return home_team, away_team, home_score, away_score
+
+    return "", "", "", ""
+
+
+try:
+    grupo2_merge_group = {
+        "season_id": "2025-26",
+        "competition_id": "PRIMERA_FEDERACION",
+        "competition_name": "Primera Federación",
+        "competition_level": "3",
+        "competition_group": "Grupo 2",
+        "cod_temporada": "21",
+        "cod_competicion": "23289295",
+        "cod_grupo": "23289297",
+    }
+
+    existing_fixture_ids = set(
+        row.get("fixture_id", "")
+        for row in fixture_rows
+        if row.get("fixture_id")
+    )
+
+    from playwright.sync_api import sync_playwright
+
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/120.0.0.0 Safari/537.36"
+            )
+        )
+
+        # Establish session on marcadores first.
+        page.goto(
+            "https://marcadores.rfef.es/pnfg/?accion=1",
+            wait_until="networkidle",
+            timeout=60000,
+        )
+
+        for selector in [
+            "text=Aceptar",
+            "text=ACEPTAR",
+            "text=Accept",
+            "button:has-text('Aceptar')",
+            "button:has-text('ACEPTAR')",
+        ]:
+            try:
+                if page.locator(selector).count() > 0:
+                    page.locator(selector).first.click(timeout=3000)
+                    page.wait_for_timeout(1500)
+                    break
+            except Exception:
+                pass
+
+        grupo2_calendar_url = (
+            "https://marcadores.rfef.es/pnfg/NPcd/NFG_VisCalendario_Vis"
+            "?cod_primaria=1000120"
+            "&codtemporada=21"
+            "&codjornada=1"
+            "&codcompeticion=23289295"
+            "&codgrupo=23289297"
+        )
+
+        page.goto(
+            grupo2_calendar_url,
+            wait_until="networkidle",
+            timeout=60000,
+        )
+
+        page.wait_for_timeout(6000)
+
+        page_text = page.inner_text("body")
+        page_html = page.content()
+
+        (EXPORT_DIR / "primerafed_grupo2_merged_calendar_text.txt").write_text(
+            page_text[:800000],
+            encoding="utf-8",
+        )
+
+        (EXPORT_DIR / "primerafed_grupo2_merged_calendar_html.html").write_text(
+            page_html[:1200000],
+            encoding="utf-8",
+        )
+
+        lines = [
+            re.sub(r"\s+", " ", line).strip()
+            for line in page_text.splitlines()
+            if re.sub(r"\s+", " ", line).strip()
+        ]
+
+        current_matchday = ""
+        current_fixture_date = ""
+        fixture_index_by_matchday = {}
+
+        for line in lines:
+            jornada_match = re.match(
+                r"^Jornada\s+([0-9]+)\s+\(([0-9]{2}-[0-9]{2}-[0-9]{4})\)$",
+                line,
+                re.IGNORECASE,
+            )
+
+            if jornada_match:
+                current_matchday = jornada_match.group(1)
+                current_fixture_date = merge_probe_normalise_date(jornada_match.group(2))
+                fixture_index_by_matchday[current_matchday] = 0
+                continue
+
+            if not current_matchday:
+                continue
+
+            lower = line.lower()
+
+            # Skip obvious navigation/header lines.
+            if (
+                "jornada" in lower
+                or "temporada" in lower
+                or "clasificación" in lower
+                or "clasificacion" in lower
+                or "calendario" in lower
+                or "competiciones" in lower
+                or "acciones" in lower
+                or "goleadores" in lower
+                or "porteros" in lower
+            ):
+                continue
+
+            if len(line) < 10:
+                continue
+
+            home_team, away_team, home_score, away_score = merge_probe_parse_fixture_line(
+                line,
+                GRUPO2_TEAMS_MERGE,
+            )
+
+            if not home_team or not away_team:
+                continue
+
+            fixture_index = fixture_index_by_matchday.get(current_matchday, 0)
+
+            raw_row = {
+                "season_id": grupo2_merge_group["season_id"],
+                "competition_id": grupo2_merge_group["competition_id"],
+                "competition_name": grupo2_merge_group["competition_name"],
+                "competition_group": grupo2_merge_group["competition_group"],
+                "cod_temporada": grupo2_merge_group["cod_temporada"],
+                "cod_competicion": grupo2_merge_group["cod_competicion"],
+                "cod_grupo": grupo2_merge_group["cod_grupo"],
+                "cod_jornada": current_matchday,
+                "fixture_index": str(fixture_index),
+                "source_url": grupo2_calendar_url,
+                "home_team_name_source": home_team,
+                "away_team_name_source": away_team,
+                "home_score": home_score,
+                "away_score": away_score,
+                "fixture_date": current_fixture_date,
+                "kickoff_time_local": "",
+                "venue_name_source": "",
+                "referee": "",
+                "raw_sequence": line,
+                "data_confidence": "high" if current_fixture_date else "needs_review",
+                "notes": "Merged from proven Grupo 2 probe calendar-view parser.",
+            }
+
+            grupo2_merge_rows.append(raw_row)
+
+            home_team_id = make_team_id(home_team)
+            away_team_id = make_team_id(away_team)
+
+            fixture_id = make_fixture_id(
+                grupo2_merge_group["season_id"],
+                grupo2_merge_group["competition_id"],
+                grupo2_merge_group["competition_group"],
+                current_matchday,
+                home_team_id,
+                away_team_id,
+            )
+
+            if fixture_id not in existing_fixture_ids:
+                result_status = "played" if home_score != "" and away_score != "" else "scheduled"
+
+                fixture_rows.append({
+                    "fixture_id": fixture_id,
+                    "season_id": grupo2_merge_group["season_id"],
+                    "competition_id": grupo2_merge_group["competition_id"],
+                    "competition_name": grupo2_merge_group["competition_name"],
+                    "competition_level": grupo2_merge_group["competition_level"],
+                    "competition_group": grupo2_merge_group["competition_group"],
+                    "fixture_phase": "regular_season",
+                    "matchday": current_matchday,
+                    "round_label": f"Jornada {current_matchday}",
+                    "fixture_date": current_fixture_date,
+                    "kickoff_time_local": "",
+                    "home_team_id": home_team_id,
+                    "home_team_name_source": home_team,
+                    "away_team_id": away_team_id,
+                    "away_team_name_source": away_team,
+                    "home_score": home_score,
+                    "away_score": away_score,
+                    "result_status": result_status,
+                    "venue_id": "",
+                    "venue_name_source": "",
+                    "attendance": "",
+                    "referee": "",
+                    "match_report_url": "",
+                    "rfef_acta_url": "",
+                    "laliga_match_url": "",
+                    "source_system": "RFEF",
+                    "source_url": grupo2_calendar_url,
+                    "source_retrieved_at": NOW,
+                    "data_confidence": raw_row["data_confidence"],
+                    "notes": "Merged from proven Grupo 2 probe calendar-view parser.",
+                })
+
+                team_index_rows.append({
+                    "team_fixture_id": f"{fixture_id}__{home_team_id}",
+                    "fixture_id": fixture_id,
+                    "team_id": home_team_id,
+                    "season_id": grupo2_merge_group["season_id"],
+                    "competition_id": grupo2_merge_group["competition_id"],
+                    "competition_name": grupo2_merge_group["competition_name"],
+                    "competition_group": grupo2_merge_group["competition_group"],
+                    "fixture_phase": "regular_season",
+                    "matchday": current_matchday,
+                    "fixture_date": current_fixture_date,
+                    "opponent_team_id": away_team_id,
+                    "home_or_away": "Home",
+                    "team_score": home_score,
+                    "opponent_score": away_score,
+                    "result_for_team": result_for_team(home_score, away_score),
+                    "venue_id": "",
+                    "is_home_ground": "true",
+                    "team_autonomous_region_id": "",
+                    "team_autonomous_region_name": "",
+                    "team_autonomous_region_slug": "",
+                    "opponent_autonomous_region_id": "",
+                    "opponent_autonomous_region_name": "",
+                    "opponent_autonomous_region_slug": "",
+                    "source_url": grupo2_calendar_url,
+                })
+
+                team_index_rows.append({
+                    "team_fixture_id": f"{fixture_id}__{away_team_id}",
+                    "fixture_id": fixture_id,
+                    "team_id": away_team_id,
+                    "season_id": grupo2_merge_group["season_id"],
+                    "competition_id": grupo2_merge_group["competition_id"],
+                    "competition_name": grupo2_merge_group["competition_name"],
+                    "competition_group": grupo2_merge_group["competition_group"],
+                    "fixture_phase": "regular_season",
+                    "matchday": current_matchday,
+                    "fixture_date": current_fixture_date,
+                    "opponent_team_id": home_team_id,
+                    "home_or_away": "Away",
+                    "team_score": away_score,
+                    "opponent_score": home_score,
+                    "result_for_team": result_for_team(away_score, home_score),
+                    "venue_id": "",
+                    "is_home_ground": "false",
+                    "team_autonomous_region_id": "",
+                    "team_autonomous_region_name": "",
+                    "team_autonomous_region_slug": "",
+                    "opponent_autonomous_region_id": "",
+                    "opponent_autonomous_region_name": "",
+                    "opponent_autonomous_region_slug": "",
+                    "source_url": grupo2_calendar_url,
+                })
+
+                existing_fixture_ids.add(fixture_id)
+
+            fixture_index_by_matchday[current_matchday] = fixture_index + 1
+
+        browser.close()
+
+except Exception as e:
+    grupo2_merge_rows.append({
+        "season_id": "",
+        "competition_id": "",
+        "competition_name": "",
+        "competition_group": "",
+        "cod_temporada": "",
+        "cod_competicion": "",
+        "cod_grupo": "",
+        "cod_jornada": "",
+        "fixture_index": "",
+        "source_url": "",
+        "home_team_name_source": "",
+        "away_team_name_source": "",
+        "home_score": "",
+        "away_score": "",
+        "fixture_date": "",
+        "kickoff_time_local": "",
+        "venue_name_source": "",
+        "referee": "",
+        "raw_sequence": "",
+        "data_confidence": "failed",
+        "notes": f"Grupo 2 merge parser failed: {type(e).__name__}: {e}",
+    })
+
+
+write_csv(
+    "primerafed_2025_26_grupo2_merged_raw.csv",
+    grupo2_merge_raw_fields,
+    grupo2_merge_rows,
+)
+
+write_csv(
+    "primerafed_2025_26_fixtures_results_rfeffed_merged_candidate.csv",
+    fixture_fields,
+    fixture_rows,
+)
+
+write_csv(
+    "primerafed_2025_26_team_fixture_index_rfeffed_merged_candidate.csv",
+    team_index_fields,
+    team_index_rows,
+)
+
+
+# Merged candidate validation
+merged_validation_fields = [
+    "check_name",
+    "result",
+    "details",
+]
+
+merged_grupo_1_rows = [
+    row for row in fixture_rows
+    if row.get("competition_group") == "Grupo 1"
+]
+
+merged_grupo_2_rows = [
+    row for row in fixture_rows
+    if row.get("competition_group") == "Grupo 2"
+]
+
+grupo2_merge_non_failed = [
+    row for row in grupo2_merge_rows
+    if row.get("data_confidence") != "failed"
+]
+
+grupo2_counts_by_matchday = {}
+
+for row in grupo2_merge_non_failed:
+    matchday = row.get("cod_jornada", "")
+    if matchday:
+        grupo2_counts_by_matchday[matchday] = grupo2_counts_by_matchday.get(matchday, 0) + 1
+
+grupo2_unexpected_counts = [
+    f"J{matchday}={count}"
+    for matchday, count in sorted(grupo2_counts_by_matchday.items(), key=lambda item: int(item[0]))
+    if count != 10
+]
+
+merged_fixture_ids = [
+    row.get("fixture_id", "")
+    for row in fixture_rows
+    if row.get("fixture_id")
+]
+
+merged_duplicate_fixture_ids = sorted([
+    fixture_id for fixture_id in set(merged_fixture_ids)
+    if merged_fixture_ids.count(fixture_id) > 1
+])
+
+merged_team_fixture_ids = [
+    row.get("team_fixture_id", "")
+    for row in team_index_rows
+    if row.get("team_fixture_id")
+]
+
+merged_duplicate_team_fixture_ids = sorted([
+    team_fixture_id for team_fixture_id in set(merged_team_fixture_ids)
+    if merged_team_fixture_ids.count(team_fixture_id) > 1
+])
+
+merged_validation_rows = [
+    {
+        "check_name": "grupo2_merged_non_failed_rows",
+        "result": str(len(grupo2_merge_non_failed)),
+        "details": "Expected 380.",
+    },
+    {
+        "check_name": "merged_candidate_fixture_rows",
+        "result": str(len(fixture_rows)),
+        "details": "Expected 740: Grupo 1 J1-36 plus Grupo 2 J1-38. Full target remains 760 once Grupo 1 J37-38 are available.",
+    },
+    {
+        "check_name": "merged_candidate_team_fixture_index_rows",
+        "result": str(len(team_index_rows)),
+        "details": "Expected 1480 if fixture rows = 740.",
+    },
+    {
+        "check_name": "merged_candidate_grupo_1_fixture_rows",
+        "result": str(len(merged_grupo_1_rows)),
+        "details": "Expected 360 currently; full target 380.",
+    },
+    {
+        "check_name": "merged_candidate_grupo_2_fixture_rows",
+        "result": str(len(merged_grupo_2_rows)),
+        "details": "Expected 380.",
+    },
+    {
+        "check_name": "grupo2_unexpected_matchday_counts",
+        "result": str(len(grupo2_unexpected_counts)),
+        "details": "|".join(grupo2_unexpected_counts),
+    },
+    {
+        "check_name": "merged_duplicate_fixture_ids",
+        "result": str(len(merged_duplicate_fixture_ids)),
+        "details": "|".join(merged_duplicate_fixture_ids),
+    },
+    {
+        "check_name": "merged_duplicate_team_fixture_ids",
+        "result": str(len(merged_duplicate_team_fixture_ids)),
+        "details": "|".join(merged_duplicate_team_fixture_ids),
+    },
+]
+
+write_csv(
+    "primerafed_2025_26_merged_candidate_validation.csv",
+    merged_validation_fields,
+    merged_validation_rows,
+)
+
+# Root-level copies for easy artifact access.
+for filename in [
+    "primerafed_2025_26_grupo2_merged_raw.csv",
+    "primerafed_2025_26_fixtures_results_rfeffed_merged_candidate.csv",
+    "primerafed_2025_26_team_fixture_index_rfeffed_merged_candidate.csv",
+    "primerafed_2025_26_merged_candidate_validation.csv",
+]:
+    src = EXPORT_DIR / filename
+    dst = Path(filename)
+
+    if src.exists():
+        dst.write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+
+print("Created merged Primera Federación candidate outputs.")
